@@ -29,7 +29,6 @@ The data packet system enables real-time data exchange between AR devices and th
       }
     }
     ```
-
   - **HeartBeatResponse**: Sent from the AR device to the Hakoniwa Asset in response to a HeartBeatRequest. It communicates the AR device’s current status, which can be either "positioning" or "play".
 
     ```json
@@ -43,7 +42,7 @@ The data packet system enables real-time data exchange between AR devices and th
     ```
 
 
-- **EventRequest**: This packet allows the Hakoniwa Asset to instruct the AR device to start or reset its actions. The `event_type` specifies the action, which can be either `"play_start"` or `"reset"`, indicating the desired action for the AR device.
+  - **EventRequest**: This packet allows the Hakoniwa Asset to instruct the AR device to start or reset its actions. The `event_type` specifies the action, which can be either `"play_start"` or `"reset"`, indicating the desired action for the AR device.
 
     ```json
     {
@@ -52,7 +51,7 @@ The data packet system enables real-time data exchange between AR devices and th
     }
     ```
 
-- **PositioningRequest**: Sent periodically by the Hakoniwa Asset to communicate its current position and orientation. This packet includes a `frame_type` (e.g., `"unity"`), `position` (x, y, z coordinates), and `orientation` (x, y, z angles in degrees) within the `data` field. The PositioningRequest ensures the simulation hub accurately represents the device’s real-time movement.
+  - **PositioningRequest**: Sent periodically by the Hakoniwa Asset to communicate its current position and orientation. This packet includes a `frame_type` (e.g., `"unity"`), `position` (x, y, z coordinates), and `orientation` (x, y, z angles in degrees) within the `data` field. The PositioningRequest ensures the simulation hub accurately represents the device’s real-time movement.
 
 
 
