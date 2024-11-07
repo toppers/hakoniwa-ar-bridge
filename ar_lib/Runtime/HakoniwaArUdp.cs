@@ -92,9 +92,14 @@ namespace hakoniwa.ar.bridge
                     {
                         lastReceiveTime = DateTime.Now;
                         sendEndPoint = new IPEndPoint(receiveEndPoint.Address, sendPort);
-                        if (packet.DataType != null)
+                        if (packet.PacketType != null)
                         {
-                            packetBuffer[packet.DataType] = packet;
+                            if (packet.PacketType == "data") {
+                                packetBuffer[packet.DataType] = packet;
+                            }
+                            else {
+                                packetBuffer[packet.EventType] = packet;
+                            }
                         }
                     }
 
@@ -118,8 +123,12 @@ namespace hakoniwa.ar.bridge
         {
             lock (bufferLock)
             {
-                packetBuffer.TryGetValue(packetType, out var packet);
-                return packet;
+                if (packetBuffer.TryGetValue(packetType, out var packet))
+                {
+                    packetBuffer.Remove(packetType); // 取得後に削除
+                    return packet;
+                }
+                return null; // パケットが見つからなければ null を返す
             }
         }
 
