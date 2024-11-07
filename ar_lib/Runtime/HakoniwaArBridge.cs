@@ -66,14 +66,14 @@ namespace hakoniwa.ar.bridge
             if ((DateTime.Now - lastHeartbeatTime).TotalSeconds > heartbeatTimeoutSeconds)
             {
                 //Console.WriteLine("Heartbeat timeout detected. Switching to POSITIONING state.");
-                state_manager.EventReset();
+                ResetEvent();
             }
         }
         void RunPositioning()
         {
             var event_packet = udp_service.GetLatestPacket("play_start");
             if (event_packet != null) {
-                state_manager.EventPlayStart();
+                PlayStartEvent();
                 return;
             }
 
@@ -100,14 +100,36 @@ namespace hakoniwa.ar.bridge
             //Console.WriteLine("Position and orientation data have been updated.");
         }
 
-
+        private void PlayStartEvent()
+        {
+            state_manager.EventPlayStart();
+            try
+            {
+                player.StartService(serverUri).GetAwaiter().GetResult(); // 非同期タスクのブロッキングを安全に行う
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error starting player service: {ex.Message}");
+                return;
+            }
+        }
+        private void ResetEvent()
+        {
+            if (state_manager.GetState() == BridgeState.PLAYING) {
+                player.ResetPostion();
+                player.StopService();
+            }
+            else {
+                //nothing to do
+            }
+            udp_service.ClearBuffers();
+            state_manager.EventReset();
+        }
         private void RunPlaying()
         {
             var event_packet = udp_service.GetLatestPacket("reset");
             if (event_packet != null) {
-                player.ResetPostion();
-                udp_service.ClearBuffers();
-                state_manager.EventReset();
+                ResetEvent();
             }
             else {
                 player.UpdateAvatars();
@@ -131,20 +153,9 @@ namespace hakoniwa.ar.bridge
                 Console.WriteLine("No player registered. Cannot start service.");
                 return false;
             }
-
             udp_service.Start();
             Console.WriteLine("Hakoniwa AR Bridge service starting...");
-
-            try
-            {
-                return player.StartService(serverUri).GetAwaiter().GetResult(); // 非同期タスクのブロッキングを安全に行う
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error starting player service: {ex.Message}");
-                return false;
-            }
-
+            return true;
         }
 
         public bool Stop()
