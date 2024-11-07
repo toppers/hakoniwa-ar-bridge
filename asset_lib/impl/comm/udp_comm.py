@@ -40,7 +40,7 @@ class UdpComm:
         while self.running:
             try:
                 data, _ = self.sock.recvfrom(1024)
-                print("data: ", data)
+                #print("data: ", data)
                 json_data = data.decode('utf-8')
                 base_packet = BasePacket.from_json(json_data)
                 queue_name = None

@@ -51,7 +51,8 @@ class MockQuest3:
         while True:
             data, _ = self.sock.recvfrom(1024)
             packet = json.loads(data.decode('utf-8'))
-            print(f"Received packet: {packet}")
+            if packet['type'] == 'data' and packet['data_type'] == "position":
+                print(f"Received packet: {packet}")
             self.handle_packet(packet)
 
     def start(self):
@@ -65,7 +66,7 @@ class MockQuest3:
         """Send heartbeat response every second."""
         while True:
             self.send_heartbeat_response()
-            print(f"Sent heartbeat with status: {self.state}")
+            #print(f"Sent heartbeat with status: {self.state}")
             time.sleep(1)  # 1秒ごとにハートビートを送信
 
 if __name__ == "__main__":

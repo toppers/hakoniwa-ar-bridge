@@ -18,7 +18,7 @@ class SyncManagerBaseService:
         try:
             packet = HeartBeatRequest(self.web_ip)
             self.udp_service.send_packet(packet)
-            print("last_recv: ", self.udp_service.get_last_recv_time())
+            #print("last_recv: ", self.udp_service.get_last_recv_time())
             if (self.udp_service.get_last_recv_time() == 0) or (time.time() - self.udp_service.get_last_recv_time() > self.heartbeat_timeout_sec):
                 print("Heartbeat timeout: assuming AR device is disconnected.")
                 self.ar_device_is_alive = False
@@ -88,7 +88,7 @@ class SyncManager(SyncManagerInterface):
                 self.udp_service.send_packet(packet)
                 self.position = position
                 self.orientation = orientation
-                print(f"Updating position to {position} and orientation to {orientation}")
+                #print(f"Updating position to {position} and orientation to {orientation}")
         except Exception as e:
             print(f"Error updating position or sending PositioningRequest: {e}")
 

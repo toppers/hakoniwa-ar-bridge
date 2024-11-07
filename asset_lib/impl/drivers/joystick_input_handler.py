@@ -1,4 +1,6 @@
 import pygame
+
+from asset_lib.impl.sync_manager import SyncManager
 from .input_handler import InputHandler
 import json
 import time
@@ -15,12 +17,10 @@ class JoystickInputHandler(InputHandler):
     SWITCH_SQUARE = 2
     SWITCH_TRIANGLE = 3
 
-    def __init__(self, position, rotation, send_udp_message, save_to_json, ip, port):
+    def __init__(self, position, rotation, sync_manager: SyncManager, save_to_json):
         self.position = position
         self.rotation = rotation
-        self.send_udp_message = send_udp_message
-        self.ip = ip
-        self.port = port
+        self.sync_manager = sync_manager
         self.save_to_json = save_to_json
 
         pygame.init()
@@ -67,6 +67,9 @@ class JoystickInputHandler(InputHandler):
         send_interval = 0.1  # 100msごとに送信
 
         while running:
+            if self.sync_manager.get_sync_status() != "POSITIONING":
+                running = False
+                break
             current_time = time.time()  # ループの先頭で時間を取得
             pygame.event.pump()  # イベントキューを更新
             for event in pygame.event.get([pygame.JOYAXISMOTION, pygame.JOYBUTTONDOWN]):  # 必要なイベントのみ取得
@@ -95,14 +98,19 @@ class JoystickInputHandler(InputHandler):
                             self.position[2] += temp_position[2]
                             self.rotation[1] += temp_rotation[1]
 
-                            updated_parameters = {"position": temp_position, "rotation": temp_rotation}
-                            message = json.dumps(updated_parameters)
-                            self.send_udp_message(message, self.ip, self.port)
-                            print(f"{current_time} Updated position: {temp_position}, rotation: {temp_rotation}")
+                            pos = {
+                                "x": self.position[0],
+                                "y": self.position[1],
+                                "z": self.position[2]
+                            }
+                            rot = {
+                                "x": 0.0,
+                                "y": self.rotation[1],
+                                "z": 0.0
+                            }
+                            self.sync_manager.update_position(pos, rot)
                             self.save_to_json(self.position, self.rotation)
-
                             last_sent_time = current_time  # 最後に送信した時間を更新
-
                 elif event.type == pygame.JOYBUTTONDOWN:
                     if self.joystick.get_button(self.SWITCH_CIRCLE):  # 確認ボタン
                         print("Confirmation button pressed.")

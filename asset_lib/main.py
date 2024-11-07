@@ -4,6 +4,7 @@ import argparse
 import time
 
 from asset_lib.impl.comm.udp_comm import UdpComm
+from asset_lib.impl.drivers.joystick_input_handler import JoystickInputHandler
 from asset_lib.impl.sync_manager import SyncManager
 
 def load_config(config_path):
@@ -30,6 +31,13 @@ def get_local_ip():
     finally:
         s.close()
     return local_ip
+
+
+def save_to_json(position, rotation):
+    data = {"position": position, "rotation": rotation}
+    with open('output.json', 'w') as f:
+        json.dump(data, f, indent=4)
+    #print(f"Saved current state to output.json")
 
 def start_service(my_ip: str, ar_ip: str, web_ip: str, recv_port: int, send_port: int) -> SyncManager:
     # UdpCommインスタンスを作成
@@ -68,10 +76,14 @@ def main():
 
     # SyncManagerサービスの開始
     sync_manager = start_service(my_ip, ar_ip, web_ip, recv_port, send_port)
+    joystick_input = JoystickInputHandler(config['position'], config['rotation'], sync_manager, save_to_json)
     try:
         while True:
             status = sync_manager.get_sync_status()
             print(f"sync_status: {status}")
+            if status == "POSITIONING":
+                joystick_input.handle_input()
+                continue
             time.sleep(1)
     except KeyboardInterrupt:
         print("\nService stopped by user.")
