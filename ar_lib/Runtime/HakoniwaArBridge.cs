@@ -125,6 +125,9 @@ namespace hakoniwa.ar.bridge
             var event_packet = udp_service.GetLatestPacket("reset");
             if (event_packet != null) {
                 player.ResetPostion();
+                udp_service.Stop();
+                udp_service = new UdpComm();
+                udp_service.StartReceiving();
                 state = BridgeState.POSITIONING;
                 return;
             }
