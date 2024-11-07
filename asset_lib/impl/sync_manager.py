@@ -84,6 +84,7 @@ class SyncManager(SyncManagerInterface):
             packet = EventRequest("reset")
             self.udp_service.send_packet(packet)
             self.state_management.disconnect_or_reset()
+            self.udp_service.reset()
         except Exception as e:
             print(f"Error during reset: {e}")
 

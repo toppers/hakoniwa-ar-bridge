@@ -68,6 +68,15 @@ class UdpComm:
         self.receive_thread = threading.Thread(target=self.receive_loop, daemon=True)
         self.receive_thread.start()
 
+    def reset(self):
+        """Clear the buffer and reset last received time."""
+        with self.lock:
+            self.sock.close()
+            self.buffer.clear()
+            self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            self.sock.bind((self.recv_ip, self.recv_port))
+            self.last_recv_time = 0
+        print("Buffer and last receive time reset.")
 
     def stop(self):
         """Stop the receiving loop and close the socket."""
