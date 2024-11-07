@@ -69,7 +69,7 @@ class JoystickInputHandler(InputHandler):
         while running:
             if self.sync_manager.get_sync_status() != "POSITIONING":
                 running = False
-                break
+                return False
             current_time = time.time()  # ループの先頭で時間を取得
             pygame.event.pump()  # イベントキューを更新
             for event in pygame.event.get([pygame.JOYAXISMOTION, pygame.JOYBUTTONDOWN]):  # 必要なイベントのみ取得
@@ -115,5 +115,6 @@ class JoystickInputHandler(InputHandler):
                     if self.joystick.get_button(self.SWITCH_CIRCLE):  # 確認ボタン
                         print("Confirmation button pressed.")
                         running = False
+                        return True
 
             pygame.time.wait(10)
