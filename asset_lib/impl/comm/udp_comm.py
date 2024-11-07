@@ -1,18 +1,21 @@
 import socket
 import json
 import threading
-from packet import BasePacket, HeartBeatRequest, HeartBeatResponse, EventRequest, PositioningRequest
+from asset_lib.impl.comm.packet import BasePacket, HeartBeatRequest, HeartBeatResponse, EventRequest, PositioningRequest
 from typing import Dict, Optional, Type
 from time import sleep, time
 
 class UdpComm:
-    def __init__(self, ip: str, port: int):
-        self.ip = ip
-        self.port = port
+    def __init__(self, recv_ip: str, recv_port: int, send_ip: Optional[str] = None, send_port: Optional[int] = None):
+        self.recv_ip = recv_ip
+        self.recv_port = recv_port
+        self.send_ip = send_ip if send_ip else recv_ip  # 送信IPが指定されていない場合は受信用のIPを使用
+        self.send_port = send_port if send_port else recv_port  # 送信ポートが指定されていない場合は受信用のポートを使用
+
         self.buffer: Dict[str, Optional[BasePacket]] = {}
         self.lock = threading.Lock()
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.sock.bind((self.ip, self.port))
+        self.sock.bind((self.recv_ip, self.recv_port))
         self.running = True
         self.last_recv_time = 0
 
@@ -23,19 +26,21 @@ class UdpComm:
             "event": EventRequest,
             "position": PositioningRequest
         }
+
     def get_last_recv_time(self):
         return self.last_recv_time
 
     def send_packet(self, packet: BasePacket):
         """Send a packet as a JSON string via UDP."""
         json_data = packet.to_json()
-        self.sock.sendto(json_data.encode('utf-8'), (self.ip, self.port))
+        self.sock.sendto(json_data.encode('utf-8'), (self.send_ip, self.send_port))
 
     def receive_loop(self):
         """Continuously listen for incoming packets, parse, and buffer the latest packet by type."""
         while self.running:
             try:
                 data, _ = self.sock.recvfrom(1024)
+                print("data: ", data)
                 json_data = data.decode('utf-8')
                 base_packet = BasePacket.from_json(json_data)
                 queue_name = None
@@ -63,10 +68,6 @@ class UdpComm:
         self.receive_thread = threading.Thread(target=self.receive_loop, daemon=True)
         self.receive_thread.start()
 
-    def get_latest_packet(self, packet_type: str) -> Optional[BasePacket]:
-        """Retrieve the latest packet for a given packet type."""
-        with self.lock:
-            return self.buffer.get(packet_type)
 
     def stop(self):
         """Stop the receiving loop and close the socket."""

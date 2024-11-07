@@ -3,8 +3,8 @@ import time
 from typing import Dict, Any
 from asset_lib.impl.comm.packet import HeartBeatRequest, PositioningRequest
 from asset_lib.impl.comm.udp_comm import UdpComm
-from sync_interface import SyncManagerInterface
-from sync_state import SyncStateManagement, SyncState
+from asset_lib.impl.sync_state import SyncStateManagement, SyncState
+from asset_lib.sync_interface import SyncManagerInterface
 
 class SyncManagerBaseService:
     def __init__(self, state_management: SyncStateManagement, web_ip: str, udp_service: UdpComm, heartbeat_timeout_sec: int = 5):
@@ -15,12 +15,16 @@ class SyncManagerBaseService:
         self.heartbeat_timeout_sec = heartbeat_timeout_sec
 
     def run(self):
-        packet = HeartBeatRequest(self.web_ip)
-        self.udp_service.send_packet(packet)
-        if time.time() - self.udp_service.get_last_recv_time() > self.heartbeat_timeout_sec:
-            print("Heartbeat timeout: assuming AR device is disconnected.")
-            self.ar_device_is_alive = False
-            self.state_management.disconnect_or_reset()
+        try:
+            packet = HeartBeatRequest(self.web_ip)
+            self.udp_service.send_packet(packet)
+            if time.time() - self.udp_service.get_last_recv_time() > self.heartbeat_timeout_sec:
+                #print("Heartbeat timeout: assuming AR device is disconnected.")
+                self.ar_device_is_alive = False
+                self.state_management.disconnect_or_reset()
+        except Exception as e:
+            #print(f"Error during HeartBeatRequest sending or heartbeat check: {e}")
+            pass
 
 class SyncManager(SyncManagerInterface):
     def __init__(self, web_ip: str, udp_service: UdpComm, heartbeat_timeout_sec: int = 5):
@@ -42,11 +46,14 @@ class SyncManager(SyncManagerInterface):
 
     def _run_service(self) -> None:
         while self.running:
-            if self.service:
-                self.service.run()
-            else:
-                print("No service defined for the current state.")
-            time.sleep(1)
+            try:
+                if self.service:
+                    self.service.run()
+                else:
+                    print("No service defined for the current state.")
+                time.sleep(1)
+            except Exception as e:
+                print(f"Error in service run loop: {e}")
 
     def stop_service(self) -> None:
         if self.running:
@@ -57,21 +64,38 @@ class SyncManager(SyncManagerInterface):
             print("SyncManager service stopped.")
 
     def start_play(self) -> None:
-        self.state_management.start_play()
+        try:
+            self.state_management.start_play()
+        except Exception as e:
+            print(f"Error starting play: {e}")
 
     def reset(self) -> None:
-        self.state_management.disconnect_or_reset()
+        try:
+            self.state_management.disconnect_or_reset()
+        except Exception as e:
+            print(f"Error during reset: {e}")
 
     def update_position(self, position: Dict[str, float], orientation: Dict[str, float]) -> None:
-        if self.state_management.state == SyncState.POSITIONING:
-            packet = PositioningRequest("unity", position, orientation)
-            self.udp_service.send_packet(packet)
-            self.position = position
-            self.orientation = orientation
-            print(f"Updating position to {position} and orientation to {orientation}")
+        try:
+            if self.state_management.state == SyncState.POSITIONING:
+                packet = PositioningRequest("unity", position, orientation)
+                self.udp_service.send_packet(packet)
+                self.position = position
+                self.orientation = orientation
+                print(f"Updating position to {position} and orientation to {orientation}")
+        except Exception as e:
+            print(f"Error updating position or sending PositioningRequest: {e}")
 
     def get_ar_status(self) -> Dict[str, Any]:
-        return {"status": self.state_management.state.name, "position": self.position, "orientation": self.orientation}
+        try:
+            return {"status": self.state_management.state.name, "position": self.position, "orientation": self.orientation}
+        except Exception as e:
+            print(f"Error retrieving AR status: {e}")
+            return {}
 
     def get_sync_status(self) -> Dict[str, Any]:
-        return {"sync_state": self.state_management.state.name}
+        try:
+            return {"sync_state": self.state_management.state.name}
+        except Exception as e:
+            print(f"Error retrieving sync status: {e}")
+            return {"sync_state": "unknown"}

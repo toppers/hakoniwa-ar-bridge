@@ -23,5 +23,5 @@ class SyncStateManagement:
 
     def disconnect_or_reset(self):
         """接続切断/リセット：任意の状態から待機モードへ遷移"""
-        print("Transitioning to WAITING (disconnection/reset)")
+        #print("Transitioning to WAITING (disconnection/reset)")
         self.state = SyncState.WAITING
