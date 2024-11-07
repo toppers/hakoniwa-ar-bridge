@@ -115,7 +115,7 @@ namespace hakoniwa.ar.bridge
                         }
                     }
 
-                    Console.WriteLine($"Received packet from {receiveEndPoint.Address}:{receiveEndPoint.Port}: {json}");
+                    //Console.WriteLine($"Received packet from {receiveEndPoint.Address}:{receiveEndPoint.Port}: {json}");
                 }
                 catch (SocketException ex)
                 {

@@ -61,7 +61,7 @@ class UdpComm:
         """Send a packet as a JSON string via UDP."""
         json_data = packet.to_json()
         ret = self.sock.sendto(json_data.encode('utf-8'), (self.send_ip, self.send_port))
-        print(f"send result: {ret}")
+        #print(f"send result: {ret}")
 
     def receive_loop(self):
         """Continuously listen for incoming packets, parse, and buffer the latest packet by type."""

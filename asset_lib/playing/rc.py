@@ -68,7 +68,8 @@ def joystick_control(client: hakosim.MultirotorClient, sync_manager) -> int:
                         data['axis'][event.axis] = cubic_stick_response(discretize_value(avg_value))
                         #print('CUBIC AXIS VALUE:',data['axis'][event.axis])
                     else:
-                        print(f'ERROR: not supported axis index: {event.axis}')
+                        pass
+                        #print(f'ERROR: not supported axis index: {event.axis}')
                 elif event.type == pygame.JOYBUTTONDOWN:
                     if (event.button < 15):
                         print("button down: index=", event.button)
@@ -89,7 +90,7 @@ def joystick_control(client: hakosim.MultirotorClient, sync_manager) -> int:
                             controller = DroneController(client, default_drone_name=client.default_drone_name, height=2.0, power=0.5, yaw_power=0.8)
                             controller.return_to_home()   
                     else:
-                        print(f'ERROR: not supported button index: {event.button}')
+                        print(f'ERROR: DOWN not supported button index: {event.button}')
                         return -1
                 elif event.type == pygame.JOYBUTTONUP:
                     if (event.button < 15):
@@ -98,8 +99,7 @@ def joystick_control(client: hakosim.MultirotorClient, sync_manager) -> int:
                             data['button'] = list(data['button'])
                             data['button'][event.button] = False
                     else:
-                        print(f'ERROR: not supported button index: {event.button}')
-                        return -1
+                        print(f'INFO: UP not supported button index: {event.button}')
             client.putGameJoystickData(data)
     except KeyboardInterrupt:
         # Ctrl+Cが押されたときにジョイスティックをクリーンアップ
