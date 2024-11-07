@@ -71,7 +71,7 @@ def main():
     try:
         while True:
             status = sync_manager.get_sync_status()
-            print(f"\rsync_status: {status}", end='', flush=True)
+            print(f"sync_status: {status}")
             time.sleep(1)
     except KeyboardInterrupt:
         print("\nService stopped by user.")

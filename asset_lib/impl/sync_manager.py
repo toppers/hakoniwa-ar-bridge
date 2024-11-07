@@ -95,7 +95,7 @@ class SyncManager(SyncManagerInterface):
 
     def get_sync_status(self) -> Dict[str, Any]:
         try:
-            return {"sync_state": self.state_management.state.name}
+            return self.state_management.state.name
         except Exception as e:
             print(f"Error retrieving sync status: {e}")
             return {"sync_state": "unknown"}
