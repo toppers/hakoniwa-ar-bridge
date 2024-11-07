@@ -97,7 +97,7 @@ class HakoniwaARBridgeService:
                 elif status == "PLAYING":
                     ret = do_radio_control(self.sync_manager, self.custom_config_path)
                     if ret != 0:
-                        sys.exit(1)
+                        self.sync_manager.reset()
                 else:
                     time.sleep(1)
         except KeyboardInterrupt:

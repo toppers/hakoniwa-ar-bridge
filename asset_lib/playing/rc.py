@@ -70,7 +70,7 @@ def joystick_control(client: hakosim.MultirotorClient, sync_manager) -> int:
                     else:
                         print(f'ERROR: not supported axis index: {event.axis}')
                 elif event.type == pygame.JOYBUTTONDOWN:
-                    if (event.button < 16):
+                    if (event.button < 15):
                         print("button down: index=", event.button)
                         data['button'] = list(data['button'])
                         if (event.button != magnet_button_index):
@@ -90,14 +90,16 @@ def joystick_control(client: hakosim.MultirotorClient, sync_manager) -> int:
                             controller.return_to_home()   
                     else:
                         print(f'ERROR: not supported button index: {event.button}')
+                        return -1
                 elif event.type == pygame.JOYBUTTONUP:
-                    if (event.button < 16):
+                    if (event.button < 15):
                         if event.button != magnet_button_index:
                             print("button up: index=", event.button)
                             data['button'] = list(data['button'])
                             data['button'][event.button] = False
                     else:
                         print(f'ERROR: not supported button index: {event.button}')
+                        return -1
             client.putGameJoystickData(data)
     except KeyboardInterrupt:
         # Ctrl+Cが押されたときにジョイスティックをクリーンアップ
