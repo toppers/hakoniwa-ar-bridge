@@ -18,10 +18,16 @@ class SyncManagerBaseService:
         try:
             packet = HeartBeatRequest(self.web_ip)
             self.udp_service.send_packet(packet)
-            if time.time() - self.udp_service.get_last_recv_time() > self.heartbeat_timeout_sec:
-                #print("Heartbeat timeout: assuming AR device is disconnected.")
+            print("last_recv: ", self.udp_service.get_last_recv_time())
+            if (self.udp_service.get_last_recv_time() == 0) or (time.time() - self.udp_service.get_last_recv_time() > self.heartbeat_timeout_sec):
+                print("Heartbeat timeout: assuming AR device is disconnected.")
                 self.ar_device_is_alive = False
                 self.state_management.disconnect_or_reset()
+            else:
+                self.ar_device_is_alive = True
+            if self.state_management.state == SyncState.WAITING:
+                if self.ar_device_is_alive:
+                    self.state_management.connect_established()
         except Exception as e:
             #print(f"Error during HeartBeatRequest sending or heartbeat check: {e}")
             pass
@@ -50,7 +56,7 @@ class SyncManager(SyncManagerInterface):
                 if self.service:
                     self.service.run()
                 else:
-                    print("No service defined for the current state.")
+                    print("No service defined for the current state.")                
                 time.sleep(1)
             except Exception as e:
                 print(f"Error in service run loop: {e}")

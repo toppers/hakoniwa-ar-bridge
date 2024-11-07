@@ -57,7 +57,7 @@ def main():
     my_ip = args.my_ip if args.my_ip else get_local_ip()
     ar_ip = args.ar_ip if args.ar_ip else config.get("ar_ip", "127.0.0.1")
     web_ip = args.web_ip if args.web_ip else config.get("web_ip", "127.0.0.1")
-    recv_port = config.get("recv_port", 38528)
+    recv_port = config.get("recv_port", 48528)
     send_port = config.get("send_port", 38528)
 
     print(f"Using My IP: {my_ip}")
