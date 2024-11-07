@@ -3,7 +3,7 @@ A bridge connecting AR applications with real-world positional and sensor data. 
 
 ## Architecture
 
-![image](https://github.com/user-attachments/assets/5de2f38b-1acd-4c2f-b386-d9edc2073b80)
+![スクリーンショット 2024-11-08 8 07 28](https://github.com/user-attachments/assets/251cdfdb-7b0d-481d-b784-f471d1acfa67)
 
 
 
