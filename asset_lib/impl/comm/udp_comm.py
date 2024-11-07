@@ -3,7 +3,7 @@ import json
 import threading
 from packet import BasePacket, HeartBeatRequest, HeartBeatResponse, EventRequest, PositioningRequest
 from typing import Dict, Optional, Type
-from time import sleep
+from time import sleep, time
 
 class UdpComm:
     def __init__(self, ip: str, port: int):
@@ -14,6 +14,7 @@ class UdpComm:
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.sock.bind((self.ip, self.port))
         self.running = True
+        self.last_recv_time = 0
 
         # data_typeに対応するパケットクラスのマッピング
         self.packet_classes = {
@@ -22,6 +23,8 @@ class UdpComm:
             "event": EventRequest,
             "position": PositioningRequest
         }
+    def get_last_recv_time(self):
+        return self.last_recv_time
 
     def send_packet(self, packet: BasePacket):
         """Send a packet as a JSON string via UDP."""
@@ -48,6 +51,7 @@ class UdpComm:
 
                 # Buffer the latest packet by its type
                 with self.lock:
+                    self.last_recv_time = time()
                     self.buffer[queue_name] = packet
 
             except Exception as e:
