@@ -73,6 +73,12 @@ namespace hakoniwa.ar.bridge
         }
         void RunPositioning()
         {
+            var event_packet = udp_service.GetLatestPacket("play_start");
+            if (event_packet != null) {
+                state = BridgeState.PLAYING;
+                return;
+            }
+
             var packet = udp_service.GetLatestPacket("position");
             if (packet == null || packet.Data == null) 
             {
@@ -112,6 +118,16 @@ namespace hakoniwa.ar.bridge
                 Console.WriteLine($"Error extracting position and orientation data: {ex.Message}");
             }
         }
+        private void RunPlaying()
+        {
+            var event_packet = udp_service.GetLatestPacket("reset");
+            if (event_packet != null) {
+                player.ResetPostion();
+                state = BridgeState.POSITIONING;
+                return;
+            }
+            player.UpdateAvatars();
+        }
         public void Run()
         {
             HeartBeatCheck();
@@ -119,7 +135,7 @@ namespace hakoniwa.ar.bridge
                 RunPositioning();
             }
             else {
-                player.UpdateAvatars();
+                RunPlaying();
             }
         }
 

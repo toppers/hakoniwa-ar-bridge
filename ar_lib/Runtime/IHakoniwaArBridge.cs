@@ -22,6 +22,7 @@ namespace hakoniwa.ar.bridge
         Task<bool> StartService(string serverUri);
         bool StopService();
         void UpdatePosition(HakoVector3 position, HakoVector3 rotation);
+        void ResetPostion();
         void UpdateAvatars();
     }
     public interface IHakoniwaArBridge
