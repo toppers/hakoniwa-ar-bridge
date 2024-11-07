@@ -1,0 +1,17 @@
+{
+    "web_ip": "127.0.0.1",
+    "ar_ip": "127.0.0.1",
+    "ar_port": 38528,
+    "my_port": 48528,
+    "custom_config_path": "../hakoniwa-unity-drone-model/custom.json",
+    "position": [
+        5.350254683299626,
+        -6.397154477844731,
+        1.898228024852174
+    ],
+    "rotation": [
+        0,
+        -58.43166529855565,
+        0
+    ]
+}
