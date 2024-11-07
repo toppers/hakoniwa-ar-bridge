@@ -17,12 +17,12 @@ class HakoniwaARBridgeService:
         self.my_ip = my_ip or self.get_local_ip()
         self.ar_ip = ar_ip or self.config.get("ar_ip", "127.0.0.1")
         self.web_ip = web_ip or self.config.get("web_ip", "127.0.0.1")
-        self.recv_port = self.config.get("recv_port", 48528)
-        self.send_port = self.config.get("send_port", 38528)
+        self.my_port = self.config.get("my_port", 48528)
+        self.ar_port = self.config.get("ar_port", 38528)
         self.output_file = self.config.get("output_file",config_path)
 
         # UDP通信サービスとSyncManagerの初期化
-        self.udp_service = UdpComm(recv_ip=self.my_ip, recv_port=self.recv_port, send_ip=self.ar_ip, send_port=self.send_port)
+        self.udp_service = UdpComm(recv_ip=self.my_ip, recv_port=self.my_port, send_ip=self.ar_ip, send_port=self.ar_port)
         self.sync_manager = SyncManager(self.web_ip, self.udp_service, heartbeat_timeout_sec=5)
         self.joystick_input = JoystickInputHandler(self.config['position'], self.config['rotation'], self.sync_manager, self.save_to_json)
 
@@ -56,6 +56,8 @@ class HakoniwaARBridgeService:
         data = {
             "web_ip": self.web_ip,
             "ar_ip": self.ar_ip,
+            "ar_port": self.ar_port,
+            "my_port": self.my_port,
             "position": position, 
             "rotation": rotation
         }
@@ -73,7 +75,7 @@ class HakoniwaARBridgeService:
             logging.info("Using My IP: %s", self.my_ip)
             logging.info("Using AR IP: %s", self.ar_ip)
             logging.info("Using Web Server IP: %s", self.web_ip)
-            logging.info("Receiving on port: %d, Sending on port: %d", self.recv_port, self.send_port)
+            logging.info("Receiving on port: %d, Sending on port: %d", self.my_port, self.ar_port)
             logging.info("Config: %s", self.config)
         except Exception as e:
             logging.error("Error starting SyncManager service: %s", e)
