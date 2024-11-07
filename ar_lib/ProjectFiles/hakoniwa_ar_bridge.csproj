@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <TargetFramework>net7.0</TargetFramework> 
+    <DefineConstants>NO_USE_UNITY</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- ソースコードがRuntimeフォルダ内にあるため、相対パスで指定 -->
+    <Folder Include="../Runtime/" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="../Runtime/*.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- JSONシリアライズ用のパッケージ参照 -->
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+  </ItemGroup>
+
+</Project>
