@@ -2,10 +2,12 @@ import json
 import socket
 import argparse
 import time
+import sys
 import logging
 from asset_lib.impl.comm.udp_comm import UdpComm
 from asset_lib.impl.drivers.joystick_input_handler import JoystickInputHandler
 from asset_lib.impl.sync_manager import SyncManager
+from asset_lib.playing.rc import do_radio_control
 
 # ロギングの設定
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -20,6 +22,7 @@ class HakoniwaARBridgeService:
         self.my_port = self.config.get("my_port", 48528)
         self.ar_port = self.config.get("ar_port", 38528)
         self.output_file = self.config.get("output_file",config_path)
+        self.custom_config_path = self.config.get("custom_config_path")
 
         # UDP通信サービスとSyncManagerの初期化
         self.udp_service = UdpComm(recv_ip=self.my_ip, recv_port=self.my_port, send_ip=self.ar_ip, send_port=self.ar_port)
@@ -58,6 +61,7 @@ class HakoniwaARBridgeService:
             "ar_ip": self.ar_ip,
             "ar_port": self.ar_port,
             "my_port": self.my_port,
+            "custom_config_path": self.custom_config_path,
             "position": position, 
             "rotation": rotation
         }
@@ -90,6 +94,10 @@ class HakoniwaARBridgeService:
                     ret = self.joystick_input.handle_input()
                     if ret == True:
                         self.sync_manager.start_play()
+                elif status == "PLAYING":
+                    ret = do_radio_control(self.sync_manager, self.custom_config_path)
+                    if ret != 0:
+                        sys.exit(1)
                 else:
                     time.sleep(1)
         except KeyboardInterrupt:
