@@ -1,7 +1,7 @@
 import threading
 import time
 from typing import Dict, Any
-from asset_lib.impl.comm.packet import HeartBeatRequest, PositioningRequest
+from asset_lib.impl.comm.packet import EventRequest, HeartBeatRequest, PositioningRequest
 from asset_lib.impl.comm.udp_comm import UdpComm
 from asset_lib.impl.sync_state import SyncStateManagement, SyncState
 from asset_lib.sync_interface import SyncManagerInterface
@@ -71,12 +71,18 @@ class SyncManager(SyncManagerInterface):
 
     def start_play(self) -> None:
         try:
+            print("EVENT: start play")
+            packet = EventRequest("play_start")
+            self.udp_service.send_packet(packet)
             self.state_management.start_play()
         except Exception as e:
             print(f"Error starting play: {e}")
 
     def reset(self) -> None:
         try:
+            print("EVENT: reset")
+            packet = EventRequest("reset")
+            self.udp_service.send_packet(packet)
             self.state_management.disconnect_or_reset()
         except Exception as e:
             print(f"Error during reset: {e}")

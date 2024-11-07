@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <OutputType>Library</OutputType>
+    <OutputType>Exe</OutputType>
     <TargetFramework>net7.0</TargetFramework> 
     <DefineConstants>NO_USE_UNITY</DefineConstants>
   </PropertyGroup>
@@ -9,9 +9,11 @@
   <ItemGroup>
     <!-- ソースコードがRuntimeフォルダ内にあるため、相対パスで指定 -->
     <Folder Include="../Runtime/" />
+    <Folder Include="../Main/" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="../Runtime/*.cs" />
+    <Compile Include="../Main/*.cs" />
   </ItemGroup>
 
   <ItemGroup>

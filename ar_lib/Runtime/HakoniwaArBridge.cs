@@ -61,7 +61,9 @@ namespace hakoniwa.ar.bridge
             }
             else
             {
-                Console.WriteLine("Invalid or missing IP address in heartbeat_request packet.");
+                if (packet != null) {
+                    Console.WriteLine("Invalid or missing IP address in heartbeat_request packet.");
+                }
             }
 
             // タイムアウトチェック: 最後のハートビートから5秒以上経過している場合
@@ -170,8 +172,8 @@ namespace hakoniwa.ar.bridge
                 return false;
             }
 
-            Console.WriteLine("Hakoniwa AR Bridge service stopping...");
             udp_service.Stop();
+            Console.WriteLine("Hakoniwa AR Bridge service stopping...");
             return player.StopService();
         }
     }
