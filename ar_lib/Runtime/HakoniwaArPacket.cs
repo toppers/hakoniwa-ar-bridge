@@ -63,15 +63,52 @@ namespace hakoniwa.ar.bridge
             }
         }
     }
-
     public class PositioningRequest : BasePacket
     {
-        public PositioningRequest(string frameType, Dictionary<string, float> position, Dictionary<string, float> orientation)
+        public string FrameType { get; set; }
+        public Dictionary<string, double> Position { get; set; }
+        public Dictionary<string, double> Orientation { get; set; }
+
+        public PositioningRequest(string frameType, Dictionary<string, double> position, Dictionary<string, double> orientation)
             : base("data", "position")
         {
-            Data["frame_type"] = frameType;
-            Data["position"] = position;
-            Data["orientation"] = orientation;
+            FrameType = frameType;
+            Position = position;
+            Orientation = orientation;
         }
+
+        // BasePacketからPositioningRequestに変換するためのメソッド
+        public static PositioningRequestData FromBasePacket(BasePacket basePacket)
+        {
+            if (basePacket.PacketType != "data" || basePacket.DataType != "position")
+            {
+                throw new ArgumentException("Invalid packet type or data type for PositioningRequest.");
+            }
+
+            // data を再度 JSON にシリアライズしてから、PositioningRequest にデシリアライズ
+            var dataJson = JsonConvert.SerializeObject(basePacket.Data);
+            var data = JsonConvert.DeserializeObject<PositioningRequestData>(dataJson);
+
+            if (data == null || data.Position == null || data.Orientation == null)
+            {
+                throw new ArgumentException($"Invalid data format in BasePacket for PositioningRequest: {dataJson}");
+            }
+
+            return data;
+        }
+
+    }
+
+    // PositioningRequestの内部データ構造
+    public class PositioningRequestData
+    {
+        [JsonProperty("frame_type")]
+        public string FrameType { get; set; }
+
+        [JsonProperty("position")]
+        public Dictionary<string, double> Position { get; set; }
+
+        [JsonProperty("orientation")]
+        public Dictionary<string, double> Orientation { get; set; }
     }
 }

@@ -4,23 +4,19 @@ using System.Threading.Tasks;
 
 namespace hakoniwa.ar.bridge
 {
-    public enum BridgeState
-    {
-        POSITIONING,
-        PLAYING
-    }
+
     public class HakoniwaArBridge: IHakoniwaArBridge
     {
         private readonly int heartbeatTimeoutSeconds = 5;
         private DateTime lastHeartbeatTime = DateTime.Now; // 初期値として現在時刻を設定
         private IHakoniwaArBridgePlayer player;
         private UdpComm udp_service;
-        private BridgeState state;
+        private HakoniwaArBridgeStateManager state_manager;
         private string serverUri;
 
         public HakoniwaArBridge()
         {
-            state = BridgeState.POSITIONING;
+            state_manager = new HakoniwaArBridgeStateManager();
             udp_service = new UdpComm();
         }
 
@@ -55,9 +51,9 @@ namespace hakoniwa.ar.bridge
                 serverUri = $"ws://{ipAddress}:8065";
 
                 // 現在の状態を文字列として取得し、HeartBeatResponseに設定
-                var reply = new HeartBeatResponse(state.ToString());
+                var reply = new HeartBeatResponse(state_manager.GetState().ToString());
                 udp_service.SendPacket(reply);
-                Console.WriteLine($"Heartbeat response sent with state: {state.ToString()} to {serverUri}");
+                //Console.WriteLine($"Heartbeat response sent with state: {state_manager.GetState().ToString()} to {serverUri}");
             }
             else
             {
@@ -69,74 +65,58 @@ namespace hakoniwa.ar.bridge
             // タイムアウトチェック: 最後のハートビートから5秒以上経過している場合
             if ((DateTime.Now - lastHeartbeatTime).TotalSeconds > heartbeatTimeoutSeconds)
             {
-                Console.WriteLine("Heartbeat timeout detected. Switching to POSITIONING state.");
-                state = BridgeState.POSITIONING;
+                //Console.WriteLine("Heartbeat timeout detected. Switching to POSITIONING state.");
+                state_manager.EventReset();
             }
         }
         void RunPositioning()
         {
             var event_packet = udp_service.GetLatestPacket("play_start");
             if (event_packet != null) {
-                state = BridgeState.PLAYING;
+                state_manager.EventPlayStart();
                 return;
             }
 
-            var packet = udp_service.GetLatestPacket("position");
-            if (packet == null || packet.Data == null) 
+            PositioningRequestData packet = udp_service.GetLatestPositioningPacket();
+            if (packet == null) 
             {
                 Console.WriteLine("No position data available in the packet.");
                 return;
             }
 
-            try
-            {
-                // `Data`から座標情報を取得
-                var positionData = packet.Data["position"] as Dictionary<string, object>;
-                var orientationData = packet.Data["orientation"] as Dictionary<string, object>;
+            HakoVector3 pos = new HakoVector3(
+                (float)packet.Position["x"],
+                (float)packet.Position["y"],
+                (float)packet.Position["z"]
+            );
 
-                if (positionData != null && orientationData != null)
-                {
-                    HakoVector3 pos = new HakoVector3(
-                        Convert.ToSingle(positionData["x"]),
-                        Convert.ToSingle(positionData["y"]),
-                        Convert.ToSingle(positionData["z"])
-                    );
+            HakoVector3 rot = new HakoVector3(
+                (float)packet.Orientation["x"],
+                (float)packet.Orientation["y"],
+                (float)packet.Orientation["z"]
+            );
 
-                    HakoVector3 rot = new HakoVector3(
-                        Convert.ToSingle(orientationData["x"]),
-                        Convert.ToSingle(orientationData["y"]),
-                        Convert.ToSingle(orientationData["z"])
-                    );
-
-                    player.UpdatePosition(pos, rot);
-                }
-                else
-                {
-                    Console.WriteLine("Position or orientation data is missing in the packet.");
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error extracting position and orientation data: {ex.Message}");
-            }
+            player.UpdatePosition(pos, rot);
+            //Console.WriteLine("Position and orientation data have been updated.");
         }
+
+
         private void RunPlaying()
         {
             var event_packet = udp_service.GetLatestPacket("reset");
             if (event_packet != null) {
                 player.ResetPostion();
-                udp_service.Stop();
-                udp_service = new UdpComm();
-                udp_service.StartReceiving();
-                state = BridgeState.POSITIONING;
-                return;
+                udp_service.ClearBuffers();
+                state_manager.EventReset();
             }
-            player.UpdateAvatars();
+            else {
+                player.UpdateAvatars();
+            }
         }
         public void Run()
         {
             HeartBeatCheck();
-            if (state == BridgeState.POSITIONING) {
+            if (state_manager.GetState() == BridgeState.POSITIONING) {
                 RunPositioning();
             }
             else {
@@ -152,7 +132,7 @@ namespace hakoniwa.ar.bridge
                 return false;
             }
 
-            udp_service.StartReceiving();
+            udp_service.Start();
             Console.WriteLine("Hakoniwa AR Bridge service starting...");
 
             try
@@ -178,6 +158,10 @@ namespace hakoniwa.ar.bridge
             udp_service.Stop();
             Console.WriteLine("Hakoniwa AR Bridge service stopping...");
             return player.StopService();
+        }
+        public BridgeState GetState()
+        {
+            return state_manager.GetState();
         }
     }
 }

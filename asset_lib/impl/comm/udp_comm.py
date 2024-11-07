@@ -12,12 +12,7 @@ class UdpComm:
         self.send_ip = send_ip if send_ip else recv_ip  # 送信IPが指定されていない場合は受信用のIPを使用
         self.send_port = send_port if send_port else recv_port  # 送信ポートが指定されていない場合は受信用のポートを使用
 
-        self.buffer: Dict[str, Optional[BasePacket]] = {}
         self.lock = threading.Lock()
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.sock.bind((self.recv_ip, self.recv_port))
-        self.running = True
-        self.last_recv_time = 0
 
         # data_typeに対応するパケットクラスのマッピング
         self.packet_classes = {
@@ -27,13 +22,46 @@ class UdpComm:
             "position": PositioningRequest
         }
 
+    def socket_create(self):
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.sock.bind((self.recv_ip, self.recv_port))
+        self.buffer: Dict[str, Optional[BasePacket]] = {}
+        self.last_recv_time = 0
+
+    def socket_close(self):
+        with self.lock:
+            self.sock.close()
+            self.buffer.clear()
+
+    def start_receiving(self):
+        self.socket_create()
+        self.running = True
+        """Start the receive loop in a separate thread."""
+        self.receive_thread = threading.Thread(target=self.receive_loop, daemon=True)
+        self.receive_thread.start()
+
+    def stop(self):
+        """Stop the receiving loop and close the socket."""
+        if (self.running):
+            self.running = False
+            self.socket_close()
+            self.receive_thread.join()
+
+    def reset(self):
+        """Clear the buffer and reset last received time."""
+        with self.lock:
+            self.buffer.clear()
+        print("Buffer and last receive time reset.")
+
+
     def get_last_recv_time(self):
         return self.last_recv_time
 
     def send_packet(self, packet: BasePacket):
         """Send a packet as a JSON string via UDP."""
         json_data = packet.to_json()
-        self.sock.sendto(json_data.encode('utf-8'), (self.send_ip, self.send_port))
+        ret = self.sock.sendto(json_data.encode('utf-8'), (self.send_ip, self.send_port))
+        print(f"send result: {ret}")
 
     def receive_loop(self):
         """Continuously listen for incoming packets, parse, and buffer the latest packet by type."""
@@ -56,30 +84,11 @@ class UdpComm:
 
                 # Buffer the latest packet by its type
                 with self.lock:
+                    #print("queue_name: ", queue_name)
                     self.last_recv_time = time()
                     self.buffer[queue_name] = packet
 
             except Exception as e:
                 print(f"Error receiving data: {e}")
-                sleep(0.1)  # To avoid high CPU usage on failure
 
-    def start_receiving(self):
-        """Start the receive loop in a separate thread."""
-        self.receive_thread = threading.Thread(target=self.receive_loop, daemon=True)
-        self.receive_thread.start()
 
-    def reset(self):
-        """Clear the buffer and reset last received time."""
-        with self.lock:
-            self.sock.close()
-            self.buffer.clear()
-            self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            self.sock.bind((self.recv_ip, self.recv_port))
-            self.last_recv_time = 0
-        print("Buffer and last receive time reset.")
-
-    def stop(self):
-        """Stop the receiving loop and close the socket."""
-        self.running = False
-        self.receive_thread.join()
-        self.sock.close()

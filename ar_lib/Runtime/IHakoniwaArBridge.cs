@@ -25,11 +25,17 @@ namespace hakoniwa.ar.bridge
         void ResetPostion();
         void UpdateAvatars();
     }
+    public enum BridgeState
+    {
+        POSITIONING,
+        PLAYING
+    }
     public interface IHakoniwaArBridge
     {
         bool Register(IHakoniwaArBridgePlayer player);
         bool Start();
         void Run();
+        BridgeState GetState();
         bool Stop();
     }
 }

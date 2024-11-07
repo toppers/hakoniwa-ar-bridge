@@ -10,10 +10,10 @@ namespace hakoniwa.ar.bridge
 {
     public class UdpComm
     {
-        private readonly UdpClient udpClient;
+        private UdpClient udpClient;
         private IPEndPoint receiveEndPoint;
         private IPEndPoint sendEndPoint;
-        private readonly Dictionary<string, BasePacket> packetBuffer;
+        private Dictionary<string, BasePacket> packetBuffer;
         private readonly object bufferLock = new object();
         private bool running = false;
         private Thread receiveThread;
@@ -27,9 +27,6 @@ namespace hakoniwa.ar.bridge
             // ローカルIPを自動的に取得
             string localIp = GetLocalIpAddress();
             receiveEndPoint = new IPEndPoint(IPAddress.Parse(localIp), recvPort);
-            udpClient = new UdpClient(recvPort);
-            packetBuffer = new Dictionary<string, BasePacket>();
-            lastReceiveTime = DateTime.Now;
         }
 
         public DateTime GetLastReceiveTime()
@@ -37,29 +34,43 @@ namespace hakoniwa.ar.bridge
             return lastReceiveTime;
         }
 
-        public void StartReceiving()
+        public void Start()
         {
-            if (running) return;
-            running = true;
+            if (running) {
+                return;
+            }
+            udpClient = new UdpClient(recvPort);
+            packetBuffer = new Dictionary<string, BasePacket>();
             receiveThread = new Thread(ReceiveLoop) { IsBackground = true };
             receiveThread.Start();
             Console.WriteLine("UdpComm receiving started.");
+            running = true;
+        }
+        public void ClearBuffers()
+        {
+            lock (bufferLock) {
+                packetBuffer.Clear();
+            }
         }
 
         public void Stop()
         {
-            running = false;
-            udpClient.Close();
-            if (receiveThread != null && receiveThread.IsAlive)
-            {
-                receiveThread.Join();
+            if (running) {
+                running = false;
+                udpClient.Close();
+                if (receiveThread != null && receiveThread.IsAlive)
+                {
+                    receiveThread.Join();
+                }
+                packetBuffer.Clear();
+                packetBuffer = null;
+                Console.WriteLine("UdpComm stopped.");
             }
-            Console.WriteLine("UdpComm stopped.");
         }
 
         public void SendPacket(BasePacket packet)
         {
-            if (sendEndPoint == null)
+            if ((sendEndPoint == null) || (running == false))
             {
                 Console.WriteLine("No send endpoint available. Please receive a packet first to set the endpoint.");
                 return;
@@ -70,7 +81,7 @@ namespace hakoniwa.ar.bridge
                 string json = packet.ToJson();
                 byte[] data = Encoding.UTF8.GetBytes(json);
                 udpClient.Send(data, data.Length, sendEndPoint);
-                Console.WriteLine($"Sent packet: {json}");
+                //Console.WriteLine($"Sent packet: {json}");
             }
             catch (Exception ex)
             {
@@ -80,6 +91,7 @@ namespace hakoniwa.ar.bridge
 
         private void ReceiveLoop()
         {
+            lastReceiveTime = DateTime.Now;
             while (running)
             {
                 try
@@ -127,6 +139,19 @@ namespace hakoniwa.ar.bridge
                 {
                     packetBuffer.Remove(packetType); // 取得後に削除
                     return packet;
+                }
+                return null; // パケットが見つからなければ null を返す
+            }
+        }
+        public PositioningRequestData GetLatestPositioningPacket()
+        {
+            lock (bufferLock)
+            {
+                if (packetBuffer.TryGetValue("position", out var packet))
+                {
+                    packetBuffer.Remove("position"); // 取得後に削除
+
+                    return PositioningRequest.FromBasePacket(packet);
                 }
                 return null; // パケットが見つからなければ null を返す
             }
