@@ -48,7 +48,7 @@ namespace hakoniwa.ar.bridge
                 lastHeartbeatTime = DateTime.Now;
 
                 var ipAddress = packet.Data["ip_address"] as string;
-                serverUri = $"ws://{ipAddress}:8065";
+                serverUri = $"ws://{ipAddress}:8765";
 
                 // 現在の状態を文字列として取得し、HeartBeatResponseに設定
                 var reply = new HeartBeatResponse(state_manager.GetState().ToString());
@@ -105,7 +105,7 @@ namespace hakoniwa.ar.bridge
             state_manager.EventPlayStart();
             try
             {
-                player.StartService(serverUri).GetAwaiter().GetResult(); // 非同期タスクのブロッキングを安全に行う
+                player.StartService(serverUri);
             }
             catch (Exception ex)
             {
