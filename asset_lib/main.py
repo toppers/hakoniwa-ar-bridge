@@ -59,6 +59,7 @@ class HakoniwaARBridgeService:
         data = {
             "web_ip": self.web_ip,
             "ar_ip": self.ar_ip,
+            "adjustments": self.config["adjustments"],
             "ar_port": self.ar_port,
             "my_port": self.my_port,
             "custom_config_path": self.custom_config_path,
@@ -91,7 +92,7 @@ class HakoniwaARBridgeService:
                 status = self.sync_manager.get_sync_status()
                 logging.info("sync_status: %s", status)
                 if status == "POSITIONING":
-                    ret = self.joystick_input.handle_input()
+                    ret = self.joystick_input.handle_input(self.config)
                     if ret == True:
                         self.sync_manager.start_play()
                 elif status == "PLAYING":

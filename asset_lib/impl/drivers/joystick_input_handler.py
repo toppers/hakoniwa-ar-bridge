@@ -61,7 +61,7 @@ class JoystickInputHandler(InputHandler):
         v = self.cubic_stick_value(v, 0.9, 0.1)
         return v
 
-    def handle_input(self):
+    def handle_input(self, config):
         running = True
         last_sent_time = 0
         send_interval = 0.1  # 100msごとに送信
@@ -88,10 +88,10 @@ class JoystickInputHandler(InputHandler):
 
                         # スティックの値が変わった場合のみ更新
                         if yaw_value != 0 or vertical_value != 0 or horizontal_value != 0 or forward_backward_value != 0:
-                            temp_rotation[1] = yaw_value
-                            temp_position[1] = vertical_value
-                            temp_position[0] = horizontal_value
-                            temp_position[2] = forward_backward_value
+                            temp_rotation[1] = yaw_value * config["adjustments"]["yaw"]
+                            temp_position[1] = vertical_value * config["adjustments"]["vertical"]
+                            temp_position[0] = horizontal_value * config["adjustments"]["horizontal"]
+                            temp_position[2] = forward_backward_value * config["adjustments"]["forward_and_back"]
 
                             self.position[0] += temp_position[0]
                             self.position[1] += temp_position[1]
