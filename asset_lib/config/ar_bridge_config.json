@@ -1,6 +1,6 @@
 {
     "web_ip": "192.168.2.100",
-    "ar_ip": "192.168.2.102",
+    "ar_ip": "192.168.2.109",
     "adjustments": {
         "yaw": 2.0,
         "vertical": 2.0,
@@ -9,15 +9,15 @@
     },
     "ar_port": 38528,
     "my_port": 48528,
-    "custom_config_path": "../hakoniwa-unity-drone-model/custom.json",
+    "custom_config_path": "../hakoniwa-unity-drone-model/DTwinAppleSilicon/custom.json",
     "position": [
-        -1.0065866880285075,
-        1.038612040875718,
-        1.1989998014472882
+        -0.9964404246643193,
+        1.1147973982287145,
+        1.0340641239632258
     ],
     "rotation": [
         0,
-        -58.49554849893174,
+        268.596530559177,
         0
     ]
 }
