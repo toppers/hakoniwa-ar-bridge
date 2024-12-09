@@ -2,18 +2,22 @@ import json
 import socket
 import argparse
 import time
-import sys
+import os
 import logging
 from asset_lib.impl.comm.udp_comm import UdpComm
 from asset_lib.impl.drivers.joystick_input_handler import JoystickInputHandler
+from asset_lib.impl.drivers.rc_utils import RcConfig, StickMonitor
 from asset_lib.impl.sync_manager import SyncManager
 from asset_lib.playing.rc import do_radio_control
+
+# デフォルトのJSONファイルパス
+DEFAULT_CONFIG_PATH = "rc_config/ps4-control.json"
 
 # ロギングの設定
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 class HakoniwaARBridgeService:
-    def __init__(self, config_path: str, my_ip: str, ar_ip: str, web_ip: str):
+    def __init__(self, config_path: str, my_ip: str, ar_ip: str, web_ip: str, rc_config_path: str = None):
         # 設定ファイルの読み込み
         self.config = self.load_config(config_path)
         self.my_ip = my_ip or self.get_local_ip()
@@ -24,10 +28,21 @@ class HakoniwaARBridgeService:
         self.output_file = self.config.get("output_file",config_path)
         self.custom_config_path = self.config.get("custom_config_path")
 
+        # RcConfigとStickMonitorの初期化
+        if rc_config_path is None:
+            rc_config_path = os.getenv("RC_CONFIG_PATH", DEFAULT_CONFIG_PATH)
+        if not os.path.exists(rc_config_path):
+            raise FileNotFoundError(f"Config file not found at '{rc_config_path}'")
+
+        rc_config = RcConfig(rc_config_path)
+        print("Controller: ", rc_config_path)
+        print("Mode: ", rc_config.config['mode'])
+        self.stick_monitor = StickMonitor(rc_config)
+
         # UDP通信サービスとSyncManagerの初期化
         self.udp_service = UdpComm(recv_ip=self.my_ip, recv_port=self.my_port, send_ip=self.ar_ip, send_port=self.ar_port)
         self.sync_manager = SyncManager(self.web_ip, self.udp_service, heartbeat_timeout_sec=5)
-        self.joystick_input = JoystickInputHandler(self.config['position'], self.config['rotation'], self.sync_manager, self.save_to_json)
+        self.joystick_input = JoystickInputHandler(self.config['position'], self.config['rotation'], self.sync_manager, self.save_to_json, self.stick_monitor)
 
     def load_config(self, config_path):
         try:
@@ -96,7 +111,7 @@ class HakoniwaARBridgeService:
                     if ret == True:
                         self.sync_manager.start_play()
                 elif status == "PLAYING":
-                    ret = do_radio_control(self.sync_manager, self.custom_config_path)
+                    ret = do_radio_control(self.sync_manager, self.custom_config_path, self.stick_monitor)
                     if ret != 0:
                         self.sync_manager.reset()
                 else:

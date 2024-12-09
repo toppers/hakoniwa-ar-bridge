@@ -1,70 +1,70 @@
 import pygame
 
+from asset_lib.impl.drivers.rc_utils import StickMonitor
 from asset_lib.impl.sync_manager import SyncManager
-from .input_handler import InputHandler
-import json
+from asset_lib.impl.drivers.input_handler import InputHandler
 import time
 
 class JoystickInputHandler(InputHandler):
-    # 定数の定義（PS4コントローラの設定に基づく）
-    STICK_TURN_LR = 0  # Turn Left/Right (Left Stick - LR)
-    STICK_UP_DOWN = 1  # Up/Down (Left Stick - UD)
-    STICK_MOVE_LR = 2  # Move Left/Right (Right Stick - LR)
-    STICK_MOVE_FB = 3  # Move Forward/Back (Right Stick - UD)
-
-    SWITCH_CROSS = 0
-    SWITCH_CIRCLE = 1
-    SWITCH_SQUARE = 2
-    SWITCH_TRIANGLE = 3
-
-    def __init__(self, position, rotation, sync_manager: SyncManager, save_to_json):
+    def __init__(self, position, rotation, sync_manager: SyncManager, save_to_json, stick_monitor: StickMonitor):
         self.position = position
         self.rotation = rotation
         self.sync_manager = sync_manager
         self.save_to_json = save_to_json
+        self.stick_monitor = stick_monitor
 
         pygame.init()
         pygame.joystick.init()
         self.joystick = pygame.joystick.Joystick(0)
         self.joystick.init()
 
-        # スティック操作の履歴を保持するための辞書と履歴の長さを設定
-        self.history_len = 5
-        self.stick_history = {self.STICK_TURN_LR: [], self.STICK_UP_DOWN: [], self.STICK_MOVE_LR: [], self.STICK_MOVE_FB: []}
+    def handle_input_position(self, event, config):
+        temp_position = [0, 0, 0]
+        temp_rotation = [0, 0, 0]
+        op_index = self.stick_monitor.get_op_index(event.axis)
+        stick_value = self.stick_monitor.stick_value(event.axis, event.value)
 
+        yaw_value = 0
+        vertical_value = 0
+        horizontal_value = 0
+        forward_backward_value = 0
+        if op_index == self.stick_monitor.rc_config.STICK_TURN_LR:
+            yaw_value = stick_value * 1.0
+        elif op_index == self.stick_monitor.rc_config.STICK_UP_DOWN:
+            vertical_value = stick_value * 0.1
+        elif op_index == self.stick_monitor.rc_config.STICK_MOVE_LR:
+            horizontal_value = stick_value * 0.1
+        elif op_index == self.stick_monitor.rc_config.STICK_MOVE_FB:
+            forward_backward_value = stick_value * 0.1
 
-    def average_stick_value(self, index, new_value: float):
-        """
-        履歴を使用してスティックの平均値を計算する
-        """
-        history = self.stick_history[index]
-        history.append(new_value)
-        if len(history) > self.history_len:
-            history.pop(0)
-        return sum(history) / len(history)
+        # スティックの値が変わった場合のみ更新
+        if yaw_value != 0 or vertical_value != 0 or horizontal_value != 0 or forward_backward_value != 0:
+            temp_rotation[1] = yaw_value * config["adjustments"]["yaw"]
+            temp_position[1] = vertical_value * config["adjustments"]["vertical"]
+            temp_position[0] = horizontal_value * config["adjustments"]["horizontal"]
+            temp_position[2] = forward_backward_value * config["adjustments"]["forward_and_back"]
 
-    def cubic_stick_value(self, x: float, a_value: float, b_value: float, c_value: float = 0.0, d_value: float = 0.0) -> float:
-        """
-        ドローンのスティック操作を3次関数で計算し、正規化する関数。
-        """
-        # 3次関数の計算
-        y = a_value * x**3 + b_value * x**2 + c_value * x + d_value
+            self.position[0] += temp_position[0]
+            self.position[1] += temp_position[1]
+            self.position[2] += temp_position[2]
+            self.rotation[1] += temp_rotation[1]
 
-        # 出力を -1 から 1 の範囲に制限（クリッピング）
-        y_clipped = max(min(y, 1.0), -1.0)
-
-        return y_clipped
-
-    def get_stick_value(self, index):
-        v = self.joystick.get_axis(index)
-        v = self.average_stick_value(index, v)
-        v = self.cubic_stick_value(v, 0.9, 0.1)
-        return v
+        pos = {
+            "x": self.position[0],
+            "y": self.position[1],
+            "z": self.position[2]
+        }
+        rot = {
+            "x": 0.0,
+            "y": self.rotation[1],
+            "z": 0.0
+        }
+        return pos, rot
 
     def handle_input(self, config):
         running = True
         last_sent_time = 0
-        send_interval = 0.1  # 100msごとに送信
+        send_interval = 0.02  # 20msごとに送信
 
         while running:
             if self.sync_manager.get_sync_status() != "POSITIONING":
@@ -74,47 +74,18 @@ class JoystickInputHandler(InputHandler):
             pygame.event.pump()  # イベントキューを更新
             for event in pygame.event.get([pygame.JOYAXISMOTION, pygame.JOYBUTTONDOWN]):  # 必要なイベントのみ取得
                 if event.type == pygame.JOYAXISMOTION:
+                    pos, rot = self.handle_input_position(event, config)
                     if current_time - last_sent_time >= send_interval:
-                        temp_position = [0, 0, 0]
-                        temp_rotation = [0, 0, 0]
-
-                        # 左スティック：Yaw角と上下調整
-                        yaw_value = self.get_stick_value(self.STICK_TURN_LR) * 1.0
-                        vertical_value = self.get_stick_value(self.STICK_UP_DOWN) * 0.1
-
-                        # 右スティック：左右と前後調整
-                        horizontal_value = self.get_stick_value(self.STICK_MOVE_LR) * 0.1
-                        forward_backward_value = self.get_stick_value(self.STICK_MOVE_FB) * 0.1
-
-                        # スティックの値が変わった場合のみ更新
-                        if yaw_value != 0 or vertical_value != 0 or horizontal_value != 0 or forward_backward_value != 0:
-                            temp_rotation[1] = yaw_value * config["adjustments"]["yaw"]
-                            temp_position[1] = vertical_value * config["adjustments"]["vertical"]
-                            temp_position[0] = horizontal_value * config["adjustments"]["horizontal"]
-                            temp_position[2] = forward_backward_value * config["adjustments"]["forward_and_back"]
-
-                            self.position[0] += temp_position[0]
-                            self.position[1] += temp_position[1]
-                            self.position[2] += temp_position[2]
-                            self.rotation[1] += temp_rotation[1]
-
-                            pos = {
-                                "x": self.position[0],
-                                "y": self.position[1],
-                                "z": self.position[2]
-                            }
-                            rot = {
-                                "x": 0.0,
-                                "y": self.rotation[1],
-                                "z": 0.0
-                            }
-                            self.sync_manager.update_position(pos, rot)
-                            self.save_to_json(self.position, self.rotation)
-                            last_sent_time = current_time  # 最後に送信した時間を更新
+                        self.sync_manager.update_position(pos, rot)
+                        self.save_to_json(self.position, self.rotation)
+                        last_sent_time = current_time  # 最後に送信した時間を更新
                 elif event.type == pygame.JOYBUTTONDOWN:
-                    if self.joystick.get_button(self.SWITCH_CIRCLE):  # 確認ボタン
-                        print("Confirmation button pressed.")
-                        running = False
-                        return True
-
+                    event_op_index = self.stick_monitor.rc_config.get_event_op_index(event.button)
+                    if event_op_index is not None and event_op_index == self.stick_monitor.rc_config.SWITCH_GRAB_BAGGAGE:
+                        event_triggered = self.stick_monitor.switch_event(event.button, (event.type == pygame.JOYBUTTONDOWN))
+                        if event_triggered:  # 確認ボタン
+                            print("Confirmation button pressed.")
+                            running = False
             pygame.time.wait(10)
+
+        return True

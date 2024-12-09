@@ -7,11 +7,8 @@ import hakosim
 import pygame
 import time
 from asset_lib.playing.return_to_home import DroneController
-from rc_utils.rc_utils import RcConfig, StickMonitor
+from asset_lib.impl.drivers.rc_utils import RcConfig, StickMonitor
 import os
-
-# デフォルトのJSONファイルパス
-DEFAULT_CONFIG_PATH = "rc_config/ps4-control.json"
 
 def saveCameraImage(client):
     png_image = client.simGetImage("0", hakosim.ImageType.Scene)
@@ -62,22 +59,10 @@ def joystick_control(client: hakosim.MultirotorClient, stick_monitor: StickMonit
         pygame.joystick.quit()
         pygame.quit()
 
-def do_radio_control(sync_manager: SyncManager, custom_config_path: str, rc_config_path: str) -> int:
-    if rc_config_path is None:
-        rc_config_path = os.getenv("RC_CONFIG_PATH", DEFAULT_CONFIG_PATH)
-    
+def do_radio_control(sync_manager: SyncManager, custom_config_path: str, stick_monitor: StickMonitor) -> int:    
     if not os.path.exists(custom_config_path):
         print(f"ERROR: Config file not found at '{custom_config_path}'")
         return -1
-    if not os.path.exists(rc_config_path):
-        print(f"ERROR: Config file not found at '{rc_config_path}'")
-        return -1
-
-    # RcConfigとStickMonitorの初期化
-    rc_config = RcConfig(rc_config_path)
-    print("Controller: ", rc_config_path)
-    print("Mode: ", rc_config.config['mode'])
-    stick_monitor = StickMonitor(rc_config)
 
     pygame.init()
     pygame.joystick.init()
