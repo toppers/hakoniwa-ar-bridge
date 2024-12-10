@@ -18,24 +18,33 @@ class JoystickInputHandler(InputHandler):
         self.joystick = pygame.joystick.Joystick(0)
         self.joystick.init()
 
-    def handle_input_position(self, event, config):
+    def handle_input_position(self, config):
         temp_position = [0, 0, 0]
         temp_rotation = [0, 0, 0]
-        op_index = self.stick_monitor.rc_config.get_op_index(event.axis)
-        stick_value = self.stick_monitor.stick_value(event.axis, event.value)
-
         yaw_value = 0
         vertical_value = 0
         horizontal_value = 0
         forward_backward_value = 0
-        if op_index == self.stick_monitor.rc_config.STICK_TURN_LR:
-            yaw_value = stick_value * 1.0
-        elif op_index == self.stick_monitor.rc_config.STICK_UP_DOWN:
-            vertical_value = stick_value * 0.1
-        elif op_index == self.stick_monitor.rc_config.STICK_MOVE_LR:
-            horizontal_value = stick_value * 0.1
-        elif op_index == self.stick_monitor.rc_config.STICK_MOVE_FB:
-            forward_backward_value = stick_value * 0.1
+
+        # 軸の数を取得
+        num_axes = self.joystick.get_numaxes()
+
+        # 各軸の値を取得
+        for axis in range(num_axes):
+            axis_value = self.joystick.get_axis(axis)
+            #print(f"軸 {axis} の値: {axis_value:.2f}")
+            op_index = self.stick_monitor.rc_config.get_op_index(axis)
+            if op_index is None:
+                continue
+            stick_value = self.stick_monitor.stick_value(axis, axis_value)
+            if op_index == self.stick_monitor.rc_config.STICK_TURN_LR:
+                yaw_value = stick_value * 1.0
+            elif op_index == self.stick_monitor.rc_config.STICK_UP_DOWN:
+                vertical_value = stick_value * 0.1
+            elif op_index == self.stick_monitor.rc_config.STICK_MOVE_LR:
+                horizontal_value = stick_value * 0.1
+            elif op_index == self.stick_monitor.rc_config.STICK_MOVE_FB:
+                forward_backward_value = stick_value * 0.1
 
         # スティックの値が変わった場合のみ更新
         if yaw_value != 0 or vertical_value != 0 or horizontal_value != 0 or forward_backward_value != 0:
@@ -59,33 +68,32 @@ class JoystickInputHandler(InputHandler):
             "y": self.rotation[1],
             "z": 0.0
         }
+        #print("Position: ", pos)
         return pos, rot
 
     def handle_input(self, config):
         running = True
         last_sent_time = 0
-        send_interval = 0.1
+        send_interval = 0.0
 
         while running:
             if self.sync_manager.get_sync_status() != "POSITIONING":
                 running = False
                 return False
-            current_time = time.time()  # ループの先頭で時間を取得
+
+            # joystick event
             pygame.event.pump()  # イベントキューを更新
-            for event in pygame.event.get([pygame.JOYAXISMOTION, pygame.JOYBUTTONDOWN]):  # 必要なイベントのみ取得
-                if event.type == pygame.JOYAXISMOTION:
-                    pos, rot = self.handle_input_position(event, config)
-                    if current_time - last_sent_time >= send_interval:
-                        self.sync_manager.update_position(pos, rot)
-                        self.save_to_json(self.position, self.rotation)
-                        last_sent_time = current_time  # 最後に送信した時間を更新
-                elif event.type == pygame.JOYBUTTONDOWN:
-                    event_op_index = self.stick_monitor.rc_config.get_event_op_index(event.button)
-                    if event_op_index is not None and event_op_index == self.stick_monitor.rc_config.SWITCH_GRAB_BAGGAGE:
-                        event_triggered = self.stick_monitor.switch_event(event.button, (event.type == pygame.JOYBUTTONDOWN))
-                        if event_triggered:  # 確認ボタン
-                            print("Confirmation button pressed.")
-                            running = False
+            pos, rot = self.handle_input_position(config)
+            self.sync_manager.update_position(pos, rot)
+            self.save_to_json(self.position, self.rotation)
+
+            for event in pygame.event.get([pygame.JOYBUTTONDOWN]):  # 必要なイベントのみ取得
+                event_op_index = self.stick_monitor.rc_config.get_event_op_index(event.button)
+                if event_op_index is not None and event_op_index == self.stick_monitor.rc_config.SWITCH_GRAB_BAGGAGE:
+                    event_triggered = self.stick_monitor.switch_event(event.button, (event.type == pygame.JOYBUTTONDOWN))
+                    if event_triggered:  # 確認ボタン
+                        print("Confirmation button pressed.")
+                        running = False
             pygame.time.wait(10)
 
         return True
