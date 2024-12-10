@@ -8,7 +8,7 @@ from asset_lib.impl.comm.udp_comm import UdpComm
 from asset_lib.impl.drivers.joystick_input_handler import JoystickInputHandler
 from asset_lib.impl.drivers.rc_utils import RcConfig, StickMonitor
 from asset_lib.impl.sync_manager import SyncManager
-from asset_lib.playing.rc import do_radio_control
+from asset_lib.playing.rc_custom import do_radio_control
 
 # デフォルトのJSONファイルパス
 DEFAULT_CONFIG_PATH = "rc_config/ps4-control.json"

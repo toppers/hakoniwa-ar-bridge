@@ -21,7 +21,7 @@ class JoystickInputHandler(InputHandler):
     def handle_input_position(self, event, config):
         temp_position = [0, 0, 0]
         temp_rotation = [0, 0, 0]
-        op_index = self.stick_monitor.get_op_index(event.axis)
+        op_index = self.stick_monitor.rc_config.get_op_index(event.axis)
         stick_value = self.stick_monitor.stick_value(event.axis, event.value)
 
         yaw_value = 0
@@ -64,7 +64,7 @@ class JoystickInputHandler(InputHandler):
     def handle_input(self, config):
         running = True
         last_sent_time = 0
-        send_interval = 0.02  # 20msごとに送信
+        send_interval = 0.1
 
         while running:
             if self.sync_manager.get_sync_status() != "POSITIONING":
