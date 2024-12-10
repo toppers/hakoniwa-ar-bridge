@@ -18,6 +18,10 @@ class JoystickInputHandler(InputHandler):
         self.joystick = pygame.joystick.Joystick(0)
         self.joystick.init()
 
+    def reset_position(self):
+        self.position = [0, 0, 0]
+        self.rotation = [0, 0, 0]
+
     def handle_input_position(self, config):
         temp_position = [0, 0, 0]
         temp_rotation = [0, 0, 0]
@@ -42,7 +46,7 @@ class JoystickInputHandler(InputHandler):
             elif op_index == self.stick_monitor.rc_config.STICK_UP_DOWN:
                 vertical_value = stick_value * 0.01
             elif op_index == self.stick_monitor.rc_config.STICK_MOVE_LR:
-                horizontal_value = stick_value * 0.01
+                horizontal_value = -stick_value * 0.01
             elif op_index == self.stick_monitor.rc_config.STICK_MOVE_FB:
                 forward_backward_value = stick_value * 0.01
 
@@ -89,6 +93,10 @@ class JoystickInputHandler(InputHandler):
                 if event_op_index is not None and event_op_index == self.stick_monitor.rc_config.SWITCH_GRAB_BAGGAGE:
                     print("Confirmation button pressed.")
                     running = False
+                elif event_op_index is not None and event_op_index == self.stick_monitor.rc_config.SWITCH_RETURN_HOME:
+                    print("RTH button pressed.")
+                    self.reset_position()
+
             pygame.time.wait(10)
         pygame.event.clear()
         return True
