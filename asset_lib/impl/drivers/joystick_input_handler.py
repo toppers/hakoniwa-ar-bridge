@@ -40,11 +40,11 @@ class JoystickInputHandler(InputHandler):
             if op_index == self.stick_monitor.rc_config.STICK_TURN_LR:
                 yaw_value = stick_value * 1.0
             elif op_index == self.stick_monitor.rc_config.STICK_UP_DOWN:
-                vertical_value = stick_value * 0.1
+                vertical_value = stick_value * 0.01
             elif op_index == self.stick_monitor.rc_config.STICK_MOVE_LR:
-                horizontal_value = stick_value * 0.1
+                horizontal_value = stick_value * 0.01
             elif op_index == self.stick_monitor.rc_config.STICK_MOVE_FB:
-                forward_backward_value = stick_value * 0.1
+                forward_backward_value = stick_value * 0.01
 
         # スティックの値が変わった場合のみ更新
         if yaw_value != 0 or vertical_value != 0 or horizontal_value != 0 or forward_backward_value != 0:
@@ -73,12 +73,8 @@ class JoystickInputHandler(InputHandler):
 
     def handle_input(self, config):
         running = True
-        last_sent_time = 0
-        send_interval = 0.0
-
         while running:
             if self.sync_manager.get_sync_status() != "POSITIONING":
-                running = False
                 return False
 
             # joystick event
@@ -87,13 +83,12 @@ class JoystickInputHandler(InputHandler):
             self.sync_manager.update_position(pos, rot)
             self.save_to_json(self.position, self.rotation)
 
-            for event in pygame.event.get([pygame.JOYBUTTONDOWN]):  # 必要なイベントのみ取得
+            for event in pygame.event.get([pygame.JOYBUTTONUP]):  # 必要なイベントのみ取得
                 event_op_index = self.stick_monitor.rc_config.get_event_op_index(event.button)
+                print(f"INFO: Event for button {event.button} ==> END.")
                 if event_op_index is not None and event_op_index == self.stick_monitor.rc_config.SWITCH_GRAB_BAGGAGE:
-                    event_triggered = self.stick_monitor.switch_event(event.button, (event.type == pygame.JOYBUTTONDOWN))
-                    if event_triggered:  # 確認ボタン
-                        print("Confirmation button pressed.")
-                        running = False
+                    print("Confirmation button pressed.")
+                    running = False
             pygame.time.wait(10)
-
+        pygame.event.clear()
         return True

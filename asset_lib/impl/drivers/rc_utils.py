@@ -176,14 +176,13 @@ class StickMonitor:
             if previous_state is True and event_on is False:
                 event_triggered = True
             self.switch_states[switch_index] = event_on
-        
         elif feature['type'] == 'toggle':
             # Toggle event toggles the state on each down event
             if event_on and not self.switch_states.get(switch_index, False):
                 self.switch_states[switch_index] = True
             elif event_on and self.switch_states[switch_index]:
                 self.switch_states[switch_index] = False
-            event_triggered = self.switch_states[switch_index]
+            event_triggered = self.switch_states.get(switch_index, False)
         else:
             # Non-toggle, non-push events just return the current state
             event_triggered = event_on

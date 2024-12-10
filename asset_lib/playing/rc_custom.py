@@ -30,9 +30,7 @@ def joystick_control(client: hakosim.MultirotorClient, stick_monitor: StickMonit
                             stick_value = stick_monitor.stick_value(event.axis, event.value)
                         except ValueError:
                             print(f'ERROR: not supported axis index: {event.axis}')
-                            return -1
-                        #if (abs(stick_value) > 0.1):
-                        #    print(f"stick event: stick_index={event.axis} op_index={op_index} event.value={event.value} stick_value={stick_value}")
+                            continue
                         data['axis'] = list(data['axis'])
                         data['axis'][op_index] = stick_value
                     else:
@@ -40,6 +38,7 @@ def joystick_control(client: hakosim.MultirotorClient, stick_monitor: StickMonit
                         #print(f'ERROR: not supported axis index: {event.axis}')
                 elif event.type == pygame.JOYBUTTONDOWN or event.type == pygame.JOYBUTTONUP:
                     if event.button < 16:
+                        print("button event: ", event.button)
                         data['button'] = list(data['button'])
                         event_op_index = stick_monitor.rc_config.get_event_op_index(event.button)
                         if event_op_index is not None:
@@ -53,11 +52,14 @@ def joystick_control(client: hakosim.MultirotorClient, stick_monitor: StickMonit
                                 elif event_op_index == stick_monitor.rc_config.SWITCH_RETURN_HOME:
                                     controller = DroneController(client, default_drone_name=client.default_drone_name, height=2.0, power=0.5, yaw_power=0.8)
                                     controller.return_to_home()
-                    else:
-                        if event.type == pygame.JOYBUTTONDOWN:
-                            return -1
                         else:
                             print(f'ERROR: not supported button index: {event.button}')
+                            pygame.event.clear()
+                            return -1
+                    else:
+                        print(f'ERROR: not supported button index(overflow): {event.button}')
+                        pygame.event.clear()
+                        return -1
             client.putGameJoystickData(data)
     except KeyboardInterrupt:
         pygame.joystick.quit()
