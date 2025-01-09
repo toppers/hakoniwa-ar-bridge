@@ -63,6 +63,7 @@ class SyncManagerDevice(SyncManagerInterface):
     def reset(self) -> None:
         try:
             print("EVENT: reset")
+            self.state_management.disconnect_or_reset()
             self.udp_service.reset()
         except Exception as e:
             print(f"Error during reset: {e}")
