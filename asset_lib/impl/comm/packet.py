@@ -43,10 +43,12 @@ class BasePacket:
             )
 
 class HeartBeatRequest(BasePacket):
-    def __init__(self, ip_address: str):
+    def __init__(self, ip_address: str, server_udp_port: int, saved_position):
         super().__init__(packet_type="data", data_type="heartbeat_request")
         self.data = {
-            "ip_address": ip_address
+            "ip_address": ip_address,
+            "server_udp_port": server_udp_port,
+            "saved_position": saved_position
         }
 
 class HeartBeatResponse(BasePacket):

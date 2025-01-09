@@ -22,6 +22,9 @@ class UdpComm:
             "position": PositioningRequest
         }
 
+    def get_port(self):
+        return self.recv_port
+
     def socket_create(self):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.sock.bind((self.recv_ip, self.recv_port))
@@ -91,4 +94,9 @@ class UdpComm:
             except Exception as e:
                 print(f"Error receiving data: {e}")
 
-
+    def get_packet(self, packet_type: str) -> Optional[BasePacket]:
+        """Get the latest packet of a given type from the buffer."""
+        with self.lock:
+            packet = self.buffer.get(packet_type)
+            self.buffer[packet_type] = None
+            return packet

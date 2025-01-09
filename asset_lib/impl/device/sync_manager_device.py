@@ -3,44 +3,28 @@ import time
 from typing import Dict, Any
 from asset_lib.impl.comm.packet import EventRequest, HeartBeatRequest, PositioningRequest
 from asset_lib.impl.comm.udp_comm import UdpComm
+from asset_lib.impl.sync_manager_base import SyncManagerBaseService
 from asset_lib.impl.sync_state import SyncStateManagement, SyncState
 from asset_lib.sync_interface import SyncManagerInterface
 
-class SyncManagerBaseService:
-    def __init__(self, state_management: SyncStateManagement, web_ip: str, udp_service: UdpComm, heartbeat_timeout_sec: int = 5):
-        self.state_management = state_management
-        self.ar_device_is_alive = False
-        self.web_ip = web_ip
-        self.udp_service = udp_service
-        self.heartbeat_timeout_sec = heartbeat_timeout_sec
-
-    def run(self):
-        try:
-            packet = HeartBeatRequest(self.web_ip)
-            self.udp_service.send_packet(packet)
-            #print("last_recv: ", self.udp_service.get_last_recv_time())
-            if (self.udp_service.get_last_recv_time() == 0) or (time.time() - self.udp_service.get_last_recv_time() > self.heartbeat_timeout_sec):
-                print("Heartbeat timeout: assuming AR device is disconnected.")
-                self.ar_device_is_alive = False
-                self.state_management.disconnect_or_reset()
-            else:
-                self.ar_device_is_alive = True
-            if self.state_management.state == SyncState.WAITING:
-                if self.ar_device_is_alive:
-                    self.state_management.connect_established()
-        except Exception as e:
-            #print(f"Error during HeartBeatRequest sending or heartbeat check: {e}")
-            pass
-
-class SyncManager(SyncManagerInterface):
-    def __init__(self, web_ip: str, udp_service: UdpComm, heartbeat_timeout_sec: int = 5):
+class SyncManagerDevice(SyncManagerInterface):
+    def __init__(self, web_ip: str, udp_service: UdpComm, heartbeat_timeout_sec: int, position, rotation):
         self.state_management = SyncStateManagement()
-        self.position = {"x": 0.0, "y": 0.0, "z": 0.0}
-        self.orientation = {"x": 0.0, "y": 0.0, "z": 0.0}        
+        self.position = {
+            "x": position[0],
+            "y": position[1],
+            "z": position[2]
+        }
+        self.orientation = {
+            "x": rotation[0],
+            "y": rotation[1],
+            "z": rotation[2]
+        }
         self.running = False
         self.thread = None
         self.udp_service = udp_service
-        self.service = SyncManagerBaseService(self.state_management, web_ip, udp_service, heartbeat_timeout_sec)
+        self.saved_position_packet = PositioningRequest("unity", self.position, self.orientation)
+        self.service = SyncManagerBaseService(self.state_management, web_ip, udp_service, heartbeat_timeout_sec, self.saved_position_packet.data)
 
     def start_service(self) -> None:
         if not self.running:
@@ -72,8 +56,6 @@ class SyncManager(SyncManagerInterface):
     def start_play(self) -> None:
         try:
             print("EVENT: start play")
-            packet = EventRequest("play_start")
-            self.udp_service.send_packet(packet)
             self.state_management.start_play()
         except Exception as e:
             print(f"Error starting play: {e}")
@@ -81,21 +63,42 @@ class SyncManager(SyncManagerInterface):
     def reset(self) -> None:
         try:
             print("EVENT: reset")
-            packet = EventRequest("reset")
-            self.udp_service.send_packet(packet)
-            self.state_management.disconnect_or_reset()
             self.udp_service.reset()
         except Exception as e:
             print(f"Error during reset: {e}")
 
-    def update_position(self, position: Dict[str, float], orientation: Dict[str, float]) -> None:
+    def is_reset(self) -> bool:
         try:
-            if self.state_management.state == SyncState.POSITIONING:
-                packet = PositioningRequest("unity", position, orientation)
-                self.udp_service.send_packet(packet)
-                self.position = position
-                self.orientation = orientation
-                #print(f"Updating position to {position} and orientation to {orientation}")
+            packet = self.udp_service.get_packet('reset')
+            if packet:
+                return True
+            return False
+        except Exception as e:
+            print(f"Error checking reset: {e}")
+            return False
+
+    def is_play_start(self) -> bool:
+        try:
+            # through reset event
+            _ = self.udp_service.get_packet('reset')
+            packet = self.udp_service.get_packet('play_start')
+            if packet:
+                return True
+            return False
+        except Exception as e:
+            print(f"Error checking play start: {e}")
+            return False
+
+    def update_position(self) -> None:
+        try:
+            # through reset event
+            _ = self.udp_service.get_packet('reset')
+            packet = self.udp_service.get_packet('position')
+            if packet:
+                self.position = packet.data['position']
+                self.orientation = packet.data['orientation']
+                print(f"Updating position to {self.position} and orientation to {self.orientation}")
+                return True
         except Exception as e:
             print(f"Error updating position or sending PositioningRequest: {e}")
 

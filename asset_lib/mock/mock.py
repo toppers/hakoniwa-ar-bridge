@@ -2,9 +2,13 @@ import socket
 import json
 import time
 import threading
+import argparse
+
+from asset_lib.impl.comm.packet import PositioningRequest
 
 class MockQuest3:
-    def __init__(self, recv_ip: str, recv_port: int, send_ip: str, send_port: int):
+    def __init__(self, mock_type, recv_ip: str, recv_port: int, send_ip: str, send_port: int):
+        self.mock_type = mock_type
         self.recv_ip = recv_ip
         self.recv_port = recv_port
         self.send_ip = send_ip
@@ -22,6 +26,18 @@ class MockQuest3:
         }
         self.sock.sendto(json.dumps(packet).encode('utf-8'), (self.send_ip, self.send_port))
 
+    def send_position_data(self, position, orientation):
+        packet = {
+            "type": "data",
+            "data_type": "position",
+            "data": {
+                "frame_type": 'unity',
+                "position": position,
+                "orientation": orientation
+            }
+        }
+        self.sock.sendto(json.dumps(packet).encode('utf-8'), (self.send_ip, self.send_port))
+
     def handle_packet(self, packet):
         """Handle incoming packets and adjust the state accordingly."""
         packet_type = packet.get("type")
@@ -34,7 +50,16 @@ class MockQuest3:
                 print("Transitioning to POSITIONING mode.")
                 self.state = "POSITIONING"
             print(f"Received position data: {packet['data']}")
-
+        elif packet_type == "data" and data_type == "heartbeat_request":
+            # ハートビートリクエストを受信した場合、ハートビートレスポンスを返信
+            if self.state == "POSITIONING":
+                position = {"x": 0.0, "y": 0.0, "z": 0.0}
+                orientation = {"x": 0.0, "y": 0.0, "z": 0.0}
+                self.send_position_data(position, orientation)
+            #print(f"Received heartbeat request from {packet['data']['ip_address']}.")
+            #print(f"Received heartbeat request from {packet['data']['server_udp_port']}.")
+            print(f"Received heartbeat request from {packet['data']['saved_position']['position']}.")
+            print(f"Received heartbeat request from {packet['data']['saved_position']['orientation']}.")
         elif packet_type == "event":
             if event_type == "play_start":
                 # プレイ開始イベントでプレイモードに遷移
@@ -70,10 +95,14 @@ class MockQuest3:
             time.sleep(1)  # 1秒ごとにハートビートを送信
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Mock Quest3 device")
+    parser.add_argument('--type', type=str, default="device", help="Type of the node (default: device)")
+    args = parser.parse_args()
     recv_ip = "0.0.0.0"  # 受信側のIPアドレス
     recv_port = 38528    # 受信ポート番号
     send_ip = "127.0.0.1"  # PCアプリ側のIPアドレス
     send_port = 48528    # 送信ポート番号
 
-    mock_quest3 = MockQuest3(recv_ip, recv_port, send_ip, send_port)
+    print(f"Starting MockQuest3 with recv_ip={recv_ip}, recv_port={recv_port}, send_ip={send_ip}, send_port={send_port}")
+    mock_quest3 = MockQuest3(args.type, recv_ip, recv_port, send_ip, send_port)
     mock_quest3.start()

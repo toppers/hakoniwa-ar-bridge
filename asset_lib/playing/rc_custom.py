@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import sys
-from asset_lib.impl.sync_manager import SyncManager
+from asset_lib.impl.local.sync_manager_local import SyncManager
 import hakosim
 import pygame
 import time

@@ -1,0 +1,11 @@
+{
+    "bridge_ip": "127.0.0.1",
+    "web_ip": "127.0.0.1",
+    "ar_port": 38528,
+    "nodes": [
+        {
+            "type": "device",
+            "path": "ar1_config.json"
+        }
+    ]
+}

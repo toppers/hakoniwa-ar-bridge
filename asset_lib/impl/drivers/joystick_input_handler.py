@@ -1,7 +1,7 @@
 import pygame
 
 from asset_lib.impl.drivers.rc_utils import StickMonitor
-from asset_lib.impl.sync_manager import SyncManager
+from asset_lib.impl.local.sync_manager_local import SyncManager
 from asset_lib.impl.drivers.input_handler import InputHandler
 import time
 
