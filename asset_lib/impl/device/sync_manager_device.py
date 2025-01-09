@@ -8,7 +8,7 @@ from asset_lib.impl.sync_state import SyncStateManagement, SyncState
 from asset_lib.sync_interface import SyncManagerInterface
 
 class SyncManagerDevice(SyncManagerInterface):
-    def __init__(self, web_ip: str, udp_service: UdpComm, heartbeat_timeout_sec: int, position, rotation):
+    def __init__(self, web_ip: str, udp_service: UdpComm, heartbeat_timeout_sec: int, positioning_speed, position, rotation):
         self.state_management = SyncStateManagement()
         self.position = {
             "x": position[0],
@@ -24,7 +24,12 @@ class SyncManagerDevice(SyncManagerInterface):
         self.thread = None
         self.udp_service = udp_service
         self.saved_position_packet = PositioningRequest("unity", self.position, self.orientation)
-        self.service = SyncManagerBaseService(self.state_management, web_ip, udp_service, heartbeat_timeout_sec, self.saved_position_packet.data)
+        self.service = SyncManagerBaseService(self.state_management, web_ip, udp_service, heartbeat_timeout_sec, positioning_speed, self.saved_position_packet.data)
+
+    def update_saved_position_packet(self, position, rotation) -> None:
+        self.position = position
+        self.orientation = rotation
+        self.service.update_saved_position_packet(self.position, self.orientation)
 
     def start_service(self) -> None:
         if not self.running:
@@ -98,6 +103,7 @@ class SyncManagerDevice(SyncManagerInterface):
             if packet:
                 self.position = packet.data['position']
                 self.orientation = packet.data['orientation']
+                self.update_saved_position_packet(self.position, self.orientation)
                 print(f"Updating position to {self.position} and orientation to {self.orientation}")
                 return True
         except Exception as e:
