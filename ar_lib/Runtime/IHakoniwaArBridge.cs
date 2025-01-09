@@ -21,8 +21,23 @@ namespace hakoniwa.ar.bridge
     {
         Task<bool> StartService(string serverUri);
         bool StopService();
+        /*
+         * position, rotationは、LocalとDeviceとで意味が変わる
+         * Local  : 最新のベース位置情報
+         * Device : ローカルに保存されているベース位置情報
+         */
         void UpdatePosition(HakoVector3 position, HakoVector3 rotation);
+        /*
+         * Device側で保持している最新のベース位置情報を取得する
+         */
+        void GetBasePosition(out HakoVector3 position, out HakoVector3 rotation);
+        /*
+         * Localの場合のみ、コールバックされる
+         */
         void ResetPostion();
+        /*
+         * Avatarsの位置情報更新タイミングでコールバックされる
+         */
         void UpdateAvatars();
     }
     public enum BridgeState
@@ -37,5 +52,11 @@ namespace hakoniwa.ar.bridge
         void Run();
         BridgeState GetState();
         bool Stop();
+
+        /*
+         * Device向けの Event API
+         */
+         void DevicePlayStartEvent();
+         void DeviceResetEvent();
     }
 }

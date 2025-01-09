@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 namespace hakoniwa.ar.bridge
 {
 
-    public class HakoniwaArBridge: IHakoniwaArBridge
+    public class HakoniwaArBridgeDevice: IHakoniwaArBridge
     {
         private readonly int heartbeatTimeoutSeconds = 5;
         private DateTime lastHeartbeatTime = DateTime.Now; // 初期値として現在時刻を設定
@@ -14,8 +14,9 @@ namespace hakoniwa.ar.bridge
         private HakoniwaArBridgeStateManager state_manager;
         private bool isStartedWebSocket = false;
         private string serverUri;
+        private HeartBeatRequestData latestHeartbeatData;
 
-        public HakoniwaArBridge()
+        public HakoniwaArBridgeDevice()
         {
             state_manager = new HakoniwaArBridgeStateManager();
             udp_service = new UdpComm();
@@ -47,6 +48,7 @@ namespace hakoniwa.ar.bridge
             {
                 // ハートビートを受信したため、タイムスタンプを更新
                 lastHeartbeatTime = DateTime.Now;
+                latestHeartbeatData = HeartBeatRequest.FromBasePacket(packet);
 
                 var ipAddress = packet.Data["ip_address"] as string;
                 serverUri = $"ws://{ipAddress}:8765";
@@ -54,6 +56,7 @@ namespace hakoniwa.ar.bridge
                 {
                     try
                     {
+                        udp_service.SetSendPort(heartbeat_data.ServerUdpPort);
                         player.StartService(serverUri);
                         isStartedWebSocket = true;
                     }
@@ -84,39 +87,22 @@ namespace hakoniwa.ar.bridge
         }
         void RunPositioning()
         {
-            var event_packet = udp_service.GetLatestPacket("play_start");
-            if (event_packet != null) {
-                PlayStartEvent();
-                return;
-            }
-
-            PositioningRequestData packet = udp_service.GetLatestPositioningPacket();
-            if (packet == null) 
-            {
-                Console.WriteLine("No position data available in the packet.");
-                return;
-            }
-
             HakoVector3 pos = new HakoVector3(
-                (float)packet.Position["x"],
-                (float)packet.Position["y"],
-                (float)packet.Position["z"]
+                (float)latestHeartbeatData.SavedPosition.Position["x"],
+                (float)latestHeartbeatData.SavedPosition.Position["y"],
+                (float)latestHeartbeatData.SavedPosition.Position["z"]
             );
 
             HakoVector3 rot = new HakoVector3(
-                (float)packet.Orientation["x"],
-                (float)packet.Orientation["y"],
-                (float)packet.Orientation["z"]
+                (float)latestHeartbeatData.SavedPosition.Orientation["x"],
+                (float)latestHeartbeatData.SavedPosition.Orientation["y"],
+                (float)latestHeartbeatData.SavedPosition.Orientation["z"]
             );
 
             player.UpdatePosition(pos, rot);
             //Console.WriteLine("Position and orientation data have been updated.");
         }
 
-        private void PlayStartEvent()
-        {
-            state_manager.EventPlayStart();
-        }
         private void ResetEvent()
         {
             if (state_manager.GetState() == BridgeState.PLAYING) {
@@ -130,23 +116,13 @@ namespace hakoniwa.ar.bridge
             udp_service.ClearBuffers();
             state_manager.EventReset();
         }
-        private void RunPlaying()
-        {
-            var event_packet = udp_service.GetLatestPacket("reset");
-            if (event_packet != null) {
-                ResetEvent();
-            }
-            else {
-                player.UpdateAvatars();
-            }
-        }
         public void Run()
         {
             HeartBeatCheck();
             if (state_manager.GetState() == BridgeState.POSITIONING) {
                 RunPositioning();
             }
-            RunPlaying();
+            player.UpdateAvatars();
         }
 
         public bool Start()
@@ -176,6 +152,17 @@ namespace hakoniwa.ar.bridge
         public BridgeState GetState()
         {
             return state_manager.GetState();
+        }
+
+        public void DevicePlayStartEvent()
+        {
+            //TODO send udp packet
+            state_manager.EventPlayStart();
+        }
+        public void DeviceResetEvent()
+        {
+            //TODO send udp packet
+            ResetEvent();
         }
     }
 }

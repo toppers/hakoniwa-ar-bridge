@@ -28,6 +28,11 @@ namespace hakoniwa.ar.bridge
             string localIp = GetLocalIpAddress();
             receiveEndPoint = new IPEndPoint(IPAddress.Parse(localIp), recvPort);
         }
+        public void SetSendPort(int port)
+        {
+            sendPort = port;
+            sendEndPoint = new IPEndPoint(receiveEndPoint.Address, sendPort);
+        }
 
         public DateTime GetLastReceiveTime()
         {
@@ -103,7 +108,6 @@ namespace hakoniwa.ar.bridge
                     lock (bufferLock)
                     {
                         lastReceiveTime = DateTime.Now;
-                        sendEndPoint = new IPEndPoint(receiveEndPoint.Address, sendPort);
                         if (packet.PacketType != null)
                         {
                             if (packet.PacketType == "data") {

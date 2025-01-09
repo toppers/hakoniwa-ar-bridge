@@ -39,9 +39,30 @@ namespace hakoniwa.ar.bridge
 
     public class HeartBeatRequest : BasePacket
     {
-        public HeartBeatRequest(string ipAddress) : base("data", "heartbeat_request")
+        public HeartBeatRequest(string ipAddress, int server_udp_port, PositioningRequestData pos) : base("data", "heartbeat_request")
         {
             Data["ip_address"] = ipAddress;
+            Data["server_udp_port"] = server_udp_port;
+            Data["saved_position"] = pos;
+        }
+        // BasePacketからHeartBeatRequestに変換するためのメソッド
+        static public HeartBeatRequest FromBasePacket(BasePacket basePacket)
+        {
+            if (basePacket.PacketType != "data" || basePacket.DataType != "heartbeat_request")
+            {
+                throw new ArgumentException("Invalid packet type or data type for HeartBeatRequest.");
+            }
+
+            // data を再度 JSON にシリアライズしてから、HeartBeatRequest にデシリアライズ
+            var dataJson = JsonConvert.SerializeObject(basePacket.Data);
+            var data = JsonConvert.DeserializeObject<HeartBeatRequest>(dataJson);
+
+            if (data == null || data.Data == null || data.Data["ip_address"] == null || data.Data["server_udp_port"] == null || data.Data["saved_position"] == null)
+            {
+                throw new ArgumentException($"Invalid data format in BasePacket for HeartBeatRequest: {dataJson}");
+            }
+
+            return data;
         }
     }
 
@@ -78,7 +99,7 @@ namespace hakoniwa.ar.bridge
         }
 
         // BasePacketからPositioningRequestに変換するためのメソッド
-        public static PositioningRequestData FromBasePacket(BasePacket basePacket)
+        public static HeartBeatRequestData FromBasePacket(BasePacket basePacket)
         {
             if (basePacket.PacketType != "data" || basePacket.DataType != "position")
             {
@@ -97,6 +118,19 @@ namespace hakoniwa.ar.bridge
             return data;
         }
 
+    }
+
+    // HeartBeatRequestの内部データ構造
+    public class HeartBeatRequestData
+    {
+        [JsonProperty("ip_address")]
+        public string IpAddress { get; set; }
+
+        [JsonProperty("server_udp_port")]
+        public int ServerUdpPort { get; set; }
+
+        [JsonProperty("saved_position")]
+        public PositioningRequestData SavedPosition { get; set; }
     }
 
     // PositioningRequestの内部データ構造
