@@ -8,7 +8,7 @@ from asset_lib.impl.sync_state import SyncStateManagement, SyncState
 from asset_lib.sync_interface import SyncManagerInterface
 
 class SyncManagerDevice(SyncManagerInterface):
-    def __init__(self, web_ip: str, udp_service: UdpComm, heartbeat_timeout_sec: int, positioning_speed, position, rotation):
+    def __init__(self, web_ip: str, udp_service: UdpComm, heartbeat_timeout_sec: int, positioning_speed, position, rotation, player, avatars):
         self.state_management = SyncStateManagement()
         self.position = {
             "x": position[0],
@@ -24,7 +24,9 @@ class SyncManagerDevice(SyncManagerInterface):
         self.thread = None
         self.udp_service = udp_service
         self.saved_position_packet = PositioningRequest("unity", self.position, self.orientation)
-        self.service = SyncManagerBaseService(self.state_management, web_ip, udp_service, heartbeat_timeout_sec, positioning_speed, self.saved_position_packet.data)
+        self.player = player
+        self.avatars = avatars
+        self.service = SyncManagerBaseService(self.state_management, web_ip, udp_service, heartbeat_timeout_sec, positioning_speed, self.saved_position_packet.data, self.player, self.avatars)
 
     def update_saved_position_packet(self, position, rotation) -> None:
         self.position = position

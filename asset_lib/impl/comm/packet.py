@@ -16,40 +16,71 @@ class BasePacket:
     @classmethod
     def from_json(cls, json_str: str) -> 'BasePacket':
         """Parse JSON string and create a packet instance based on data_type or event_type."""
-        data = json.loads(json_str)
-        packet_type = data.get("type")
-        data_type = data.get("data_type")
-        event_type = data.get("event_type")
+        try:
+            data = json.loads(json_str)
+            packet_type = data.get("type")
+            data_type = data.get("data_type")
+            event_type = data.get("event_type")
+            packet_data = data.get("data", {})
 
-        if data_type == "heartbeat_request":
-            return HeartBeatRequest(data["data"]["ip_address"])
-        elif data_type == "heartbeat_response":
-            return HeartBeatResponse(data["data"]["status"])
-        elif data_type == "position":
-            return PositioningRequest(
-                frame_type=data["data"]["frame_type"],
-                position=data["data"]["position"],
-                orientation=data["data"]["orientation"]
-            )
-        elif event_type in ["play_start", "reset"]:
-            return EventRequest(event_type=event_type)
-        else:
-            # デフォルトでBasePacketを返す
-            return cls(
-                packet_type=packet_type,
-                data_type=data_type,
-                event_type=event_type,
-                data=data.get("data")
-            )
+            if data_type == "heartbeat_request":
+                return HeartBeatRequest(
+                    ip_address=packet_data["ip_address"],
+                    server_udp_port=packet_data["server_udp_port"],
+                    positioning_speed=packet_data["positioning_speed"],
+                    saved_position=packet_data["saved_position"],
+                    player=packet_data.get("player"),
+                    avatars=packet_data.get("avatars", [])
+                )
+            elif data_type == "heartbeat_response":
+                return HeartBeatResponse(status=packet_data["status"])
+            elif data_type == "position":
+                return PositioningRequest(
+                    frame_type=packet_data["frame_type"],
+                    position=packet_data["position"],
+                    orientation=packet_data["orientation"]
+                )
+            elif event_type in ["play_start", "reset"]:
+                return EventRequest(event_type=event_type)
+            else:
+                # デフォルトでBasePacketを返す
+                return cls(
+                    packet_type=packet_type,
+                    data_type=data_type,
+                    event_type=event_type,
+                    data=packet_data
+                )
+        except (json.JSONDecodeError, KeyError) as e:
+            raise ValueError(f"Invalid JSON data for BasePacket: {e}")
 
 class HeartBeatRequest(BasePacket):
-    def __init__(self, ip_address: str, server_udp_port: int, positioning_speed, saved_position):
+    def __init__(
+        self,
+        ip_address: str,
+        server_udp_port: int,
+        positioning_speed,
+        saved_position,
+        player: dict,
+        avatars: list
+    ):
+        """
+        HeartBeatRequestの初期化
+
+        :param ip_address: IPアドレス
+        :param server_udp_port: UDPポート番号
+        :param positioning_speed: 位置決め速度情報 (例: rotation, move)
+        :param saved_position: 保存された位置情報
+        :param player: プレイヤー情報 (辞書形式: {"type": str, "name": str})
+        :param avatars: アバター情報のリスト (例: [{"type": str, "name": str}, ...])
+        """
         super().__init__(packet_type="data", data_type="heartbeat_request")
         self.data = {
             "ip_address": ip_address,
             "server_udp_port": server_udp_port,
             "positioning_speed": positioning_speed,
-            "saved_position": saved_position
+            "saved_position": saved_position,
+            "player": player,
+            "avatars": avatars,
         }
 
 class HeartBeatResponse(BasePacket):

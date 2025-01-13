@@ -15,7 +15,7 @@ class HakoniwaARBridgeServiceDevice:
         self.output_file = self.config.get("output_file",config_path)
         print(f"Config: {self.config}")
         self.udp_service = UdpComm(recv_ip=self.my_ip, recv_port=self.server_udp_port, send_ip=self.ar_ip, send_port=self.ar_port)
-        self.sync_manager = SyncManagerDevice(self.web_ip, self.udp_service, 5, self.config['positioning_speed'], self.config['position'], self.config['rotation'])
+        self.sync_manager = SyncManagerDevice(self.web_ip, self.udp_service, 5, self.config['positioning_speed'], self.config['position'], self.config['rotation'], self.config['player'], self.config['avatars'])
         
     def load_config(self, config_path):
         try:
@@ -36,6 +36,8 @@ class HakoniwaARBridgeServiceDevice:
         data = {
             "ar_ip": self.ar_ip,
             "server_udp_port": self.server_udp_port,
+            "player": self.config['player'],
+            "avatars": self.config['avatars'],
             "positioning_speed": self.config['positioning_speed'],
             "position": [
                 position["x"],
