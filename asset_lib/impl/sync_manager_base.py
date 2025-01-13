@@ -31,7 +31,7 @@ class SyncManagerBaseService:
             self.udp_service.send_packet(packet)
             #print("last_recv: ", self.udp_service.get_last_recv_time())
             if (self.udp_service.get_last_recv_time() == 0) or (time.time() - self.udp_service.get_last_recv_time() > self.heartbeat_timeout_sec):
-                print("Heartbeat timeout: assuming AR device is disconnected.")
+                print(f"{self.player['name']} : Heartbeat timeout: assuming AR device is disconnected.")
                 self.ar_device_is_alive = False
                 self.state_management.disconnect_or_reset()
             else:
