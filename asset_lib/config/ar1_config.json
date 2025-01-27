@@ -21,6 +21,18 @@
         {
             "type": "right_hand",
             "name": "Player1_right_hand"
+        },
+        {
+            "type": "head",
+            "name": "Player2_head"
+        },
+        {
+            "type": "left_hand",
+            "name": "Player2_left_hand"
+        },
+        {
+            "type": "right_hand",
+            "name": "Player2_right_hand"
         }
     ],
     "positioning_speed": {
@@ -28,13 +40,13 @@
         "move": 0.2
     },
     "position": [
-        -0.03569056838750839,
-        -0.010655988939106464,
-        -0.3847883343696594
+        -0.23085306584835052,
+        0.20329172909259796,
+        -0.8030652403831482
     ],
     "rotation": [
         0.0,
-        13.141871452331543,
+        -36.93844223022461,
         0.0
     ]
 }
