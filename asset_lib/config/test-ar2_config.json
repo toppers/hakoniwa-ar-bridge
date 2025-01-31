@@ -1,7 +1,10 @@
 {
     "ar_ip": "192.168.2.105",
     "server_udp_port": 48528,
-    "player": {},
+    "player": {
+        "type": "dji",
+        "name": "Drone2"
+    },
     "avatars": [],
     "positioning_speed": {
         "rotation": 20.0,
