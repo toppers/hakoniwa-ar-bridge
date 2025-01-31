@@ -5,11 +5,7 @@
     "nodes": [
         {
             "type": "device",
-            "path": "ar1_config.json"
-        },
-        {
-            "type": "device",
-            "path": "ar2_config.json"
+            "path": "test-ar2_config.json"
         }
     ]
 }

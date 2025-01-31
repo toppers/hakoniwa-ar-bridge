@@ -1,5 +1,5 @@
 {
-    "ar_ip": "192.168.2.111",
+    "ar_ip": "192.168.2.105",
     "server_udp_port": 48528,
     "player": {
         "type": "dji",
@@ -23,30 +23,22 @@
             "name": "Player1_right_hand"
         },
         {
-            "type": "head",
-            "name": "Player2_head"
-        },
-        {
-            "type": "left_hand",
-            "name": "Player2_left_hand"
-        },
-        {
-            "type": "right_hand",
-            "name": "Player2_right_hand"
-        }
+            "type": "baggage",
+            "name": "Baggage1"
+        }        
     ],
     "positioning_speed": {
         "rotation": 20.0,
         "move": 0.2
     },
     "position": [
-        -0.23085306584835052,
-        0.27706030011177063,
-        -0.8030652403831482
+        0.18602041900157928,
+        0.4371761679649353,
+        -1.1284584999084473
     ],
     "rotation": [
         0.0,
-        -49.40812683105469,
+        1.0876160860061646,
         0.0
     ]
 }
