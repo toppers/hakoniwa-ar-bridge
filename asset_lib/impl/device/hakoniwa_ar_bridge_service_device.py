@@ -63,12 +63,15 @@ class HakoniwaARBridgeServiceDevice:
         try:
             print("Starting SyncManager service.")
             self.sync_manager.start_service()
-            logging.info("Using My IP: %s", self.my_ip)
-            logging.info("Using AR IP: %s", self.ar_ip)
-            logging.info("Using Web Server IP: %s", self.web_ip)
-            logging.info("Receiving on port: %d, Sending on port: %d", self.server_udp_port, self.ar_port)
-            logging.info("Config: %s", self.config)
+            print("Using My IP: %s", self.my_ip)
+            print("Using AR IP: %s", self.ar_ip)
+            print("Using Web Server IP: %s", self.web_ip)
+            print("Receiving on port: %d, Sending on port: %d", self.server_udp_port, self.ar_port)
+            print("Config: %s", self.config)
         except Exception as e:
+            logging.error("Using My IP: %s", self.my_ip)
+            logging.error("Using AR IP: %s", self.ar_ip)
+            logging.error("Using Web Server IP: %s", self.web_ip)
             logging.error("Error starting SyncManager service: %s", e)
 
     def run(self):

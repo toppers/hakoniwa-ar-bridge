@@ -26,10 +26,13 @@ class UdpComm:
         return self.recv_port
 
     def socket_create(self):
+        print(f"Creating socket on {self.recv_ip}:{self.recv_port}")
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        print(f"Binding socket to {self.recv_ip}:{self.recv_port}")
         self.sock.bind((self.recv_ip, self.recv_port))
         self.buffer: Dict[str, Optional[BasePacket]] = {}
         self.last_recv_time = 0
+        print("Socket created.")
 
     def socket_close(self):
         with self.lock:
