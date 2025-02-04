@@ -5,48 +5,19 @@
         "type": "dji",
         "name": "Drone2"
     },
-    "avatars": [
-        {
-            "type": "dji",
-            "name": "Drone1"
-        },
-        {
-            "type": "head",
-            "name": "Player2_head"
-        },
-        {
-            "type": "left_hand",
-            "name": "Player2_left_hand"
-        },
-        {
-            "type": "right_hand",
-            "name": "Player2_right_hand"
-        },
-        {
-            "type": "head",
-            "name": "Player1_head"
-        },
-        {
-            "type": "left_hand",
-            "name": "Player1_left_hand"
-        },
-        {
-            "type": "right_hand",
-            "name": "Player1_right_hand"
-        }
-    ],
+    "avatars": [],
     "positioning_speed": {
         "rotation": 20.0,
         "move": 0.2
     },
     "position": [
-        0.8172975182533264,
-        -0.13179074227809906,
-        -2.18906307220459
+        -1.126193642616272,
+        -0.22808502614498138,
+        -0.39168426394462585
     ],
     "rotation": [
         0.0,
-        -79.2665023803711,
+        -11.937152862548828,
         0.0
     ]
 }
